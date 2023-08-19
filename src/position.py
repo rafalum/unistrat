@@ -17,6 +17,10 @@ class Position:
         self.fee_growth_inside_0_last = fee_growth_inside_0_last
         self.fee_growth_inside_1_last = fee_growth_inside_1_last
 
+    def __str__(self):
+
+        return f"Lower Tick: {self.lower_tick}, Init Tick: {self.init_tick}, Upper Tick: {self.upper_tick}, Liquidity: {self.liquidity}"
+
     def tick_to_price(self, tick):
         return math.pow(1.0001, tick)
 
