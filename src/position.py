@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-from src.math import tick_to_sqrt_price, tick_to_price
+from uniwap_math import tick_to_sqrt_price, tick_to_price
 
 class Position:
 
@@ -79,6 +79,9 @@ class Position:
         
         return self.liquidity * value
     
+    # 
+    #
+    # @ret: value if the initial amount were simply held in y
     def value_hold(self, current_tick):
 
         price_lower_tick = tick_to_price(self.lower_tick)
@@ -104,9 +107,12 @@ class Position:
 
         return (v_pos - v_hold) / v_hold
     
-    def accumulated_fees(self, fee_growth_inside_0_present, fee_growth_inside_1_present):
+    # 
+    #
+    # @ret: accumulated fees of the position in y
+    def accumulated_fees(self, current_tick, fee_growth_inside_0_present, fee_growth_inside_1_present):
 
-        accumulated_fees_0 = self.liquidity * (fee_growth_inside_0_present - self.fee_growth_inside_0_last)
+        accumulated_fees_0 = self.liquidity * (fee_growth_inside_0_present - self.fee_growth_inside_0_last) * tick_to_price(current_tick)
         accumulated_fees_1 = self.liquidity * (fee_growth_inside_1_present - self.fee_growth_inside_1_last)
 
         return accumulated_fees_0, accumulated_fees_1
