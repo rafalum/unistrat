@@ -1,6 +1,7 @@
 import os
 import math
 import json
+import numpy as np
 
 from web3 import Web3
 from dotenv import load_dotenv
@@ -90,3 +91,28 @@ def get_fee_growth_inside_last(lower_tick_state, upper_tick_state, lower_tick, u
     fee_growth_inside_1_last = calculate_fee_inside(lower_tick, upper_tick, current_tick, lower_tick_fee_growth_outside_1, upper_tick_fee_growth_outside_1, fee_growth_global_1)
 
     return fee_growth_inside_0_last, fee_growth_inside_1_last
+
+def get_volume_in_last_blocks(swap_data, block_interval_size=12, number_volume=64):
+
+    swap_data_np = np.stack(swap_data, axis=0)
+
+    last_block = int(swap_data_np[-1, 0])
+
+    volume = []
+    block_interval = []
+    for _ in range(number_volume):
+
+        interval_lower_bound = last_block - last_block % block_interval_size
+        interval_upper_bound = last_block + 1
+
+        # Selects all rows that are in the current interval
+        swap_data_last_interval = swap_data_np[(swap_data_np[:, 0] >= interval_lower_bound) & (swap_data_np[:, 0] < interval_upper_bound)]
+
+        # Sum all swap volumes of y
+        volume.append(np.sum(np.abs(swap_data_last_interval[:, 5])) / 10**18)
+
+        block_interval.append((interval_lower_bound, interval_upper_bound))
+
+        last_block = interval_lower_bound - 1
+            
+    return volume, block_interval
