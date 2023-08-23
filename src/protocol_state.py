@@ -20,13 +20,14 @@ class ProtocolState:
 
         self.current_block = None
         self.current_tick = None
+        self.current_liquidity = None
 
         # Event data
         self.swap_data = init
         self.mint_data = []
         self.burn_data = []
 
-        self.liquidity_around_tick = []
+        self.tick_states = {}
 
         self.max_state_size = max_state_size
 
@@ -82,7 +83,10 @@ class ProtocolState:
             
             
             if new_burn_or_mint or self.current_tick != self.swap_data[-1][1]:
-                thread = threading.Thread(target=self._get_liquidity_around_tick, args=(self.swap_data[-1][1], self.current_block), daemon=True)
+
+                self.current_liquidity = self.provider.get_liquidity(self.current_block)
+
+                thread = threading.Thread(target=self._get_tick_states, args=(self.swap_data[-1][1], self.current_block, new_burn_or_mint), daemon=True)
                 thread.start()
 
             self.current_tick = self.swap_data[-1][1]
@@ -90,32 +94,22 @@ class ProtocolState:
             if not self.provider.backtest:
                 time.sleep(12)
             else:
-                time.sleep(0.2)
+                time.sleep(1)
 
-    def _get_liquidity_around_tick(self, tick, block_number) -> None:
+    def _get_tick_states(self, current_tick, block_number, get_all=False, tick_range=100) -> None:
 
-        liquidity = self.provider.get_liquidity(block_number)
+        tick_below = int(current_tick // 10 * 10)
 
-        tick_below = tick // 10 * 10
-        tick_above = tick_below + 10
-
-        tick_state_below = self.provider.get_tick_state(tick_below, block_number)
-        tick_state_above = self.provider.get_tick_state(tick_above, block_number)
-
-        if tick_state_below:
-            liquidity_net_below = tick_state_below[1]
-            liquidity_tick_below = liquidity - liquidity_net_below
-            liquidity_tick_below
+        if get_all or self.tick_states == {}:
+            self.tick_states = {}
+            for tick in range(tick_below - tick_range, tick_below + tick_range + 10, 10):
+                tick_state = self.provider.get_tick_state(tick, block_number)
+                self.tick_states[tick] = tick_state
         else:
-            liquidity_tick_below = liquidity
-            
-        if tick_state_above:
-            liquidity_net_above = tick_state_above[1]
-            liquidity_tick_above = liquidity + liquidity_net_above
-        else:
-            liquidity_tick_above = liquidity
-
-        self.liquidity_around_tick = [liquidity_tick_below, liquidity, liquidity_tick_above]
+            for tick in range(tick_below - tick_range, tick_below + tick_range + 10, 10):
+                if tick not in self.tick_states:
+                    tick_state = self.provider.get_tick_state(tick, block_number)
+                    self.tick_states[tick] = tick_state
 
         return
 
