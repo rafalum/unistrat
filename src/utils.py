@@ -6,7 +6,7 @@ import numpy as np
 from web3 import Web3
 from dotenv import load_dotenv
 
-from uniwap_math import calculate_fee_inside
+from uniwap_math import calculate_fee_inside, tick_to_price, tick_to_sqrt_price
 
 load_dotenv()
 
@@ -32,14 +32,12 @@ def load_abi(name: str) -> str:
         abi: str = json.load(f)
     return abi
 
-def tick_to_sqrtPrice(tick):
-    return math.pow(1.0001, tick // 2)
 
 def real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, x_real=None, y_real=None):
 
-    lower_sqrtPrice = tick_to_sqrtPrice(lower_tick)
-    current_sqrtPrice = tick_to_sqrtPrice(current_tick)
-    upper_sqrtPrice = tick_to_sqrtPrice(upper_tick)
+    lower_sqrtPrice = tick_to_sqrt_price(lower_tick)
+    current_sqrtPrice = tick_to_sqrt_price(current_tick)
+    upper_sqrtPrice = tick_to_sqrt_price(upper_tick)
 
     if y_real:
         y_real_inv = math.pow(y_real, -1)
@@ -64,12 +62,26 @@ def real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, x_re
     y_virt = liquidity * current_sqrtPrice
 
     return x_virt, y_virt, real
+
+def virtual_reserves_to_real_reserves(current_tick, liquidity):
+
+    lower_sqrtPrice = tick_to_sqrt_price(current_tick - 5)
+    sqrtPrice = tick_to_sqrt_price(current_tick)
+    upper_sqrtPrice = tick_to_sqrt_price(current_tick + 5)
+
+    x_virt = liquidity / sqrtPrice
+    y_virt = liquidity * sqrtPrice
+
+    x_real = x_virt - liquidity / upper_sqrtPrice
+    y_real = y_virt - liquidity * lower_sqrtPrice
+
+    return x_real, y_real
     
 
 def total_value_in_tick(current_tick, sqrtPrice, liquidity):
 
-    lower_sqrtPrice = tick_to_sqrtPrice(current_tick - 5)
-    upper_sqrtPrice = tick_to_sqrtPrice(current_tick + 5)
+    lower_sqrtPrice = tick_to_sqrt_price(current_tick - 5)
+    upper_sqrtPrice = tick_to_sqrt_price(current_tick + 5)
 
     x_virt = liquidity / sqrtPrice
     y_virt = liquidity * sqrtPrice
@@ -116,3 +128,19 @@ def get_volume_in_last_blocks(swap_data, block_interval_size=12, number_volume=6
         last_block = interval_lower_bound - 1
             
     return volume, block_interval
+
+def get_total_value_locked_in_tick(tick, liquidity):
+
+    x_real, y_real = virtual_reserves_to_real_reserves(tick, liquidity)
+
+    total_value_locked = x_real * tick_to_price(tick) / 10**18 + y_real / 10**18
+
+    return total_value_locked
+
+def get_value_locked_for_tick_range(current_tick, liquidities):
+
+    value_locked = []
+    for i in range(len(liquidities)):
+        value_locked.append(get_total_value_locked_in_tick(current_tick - len(liquidities) // 2 + i, liquidities[i]))
+
+    return value_locked

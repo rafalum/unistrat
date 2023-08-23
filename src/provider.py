@@ -19,10 +19,10 @@ class Provider:
             self.data = np.loadtxt(data, delimiter=",", dtype=float)
             self.block_number = self.data[0, 0]
   
-
+    
     def get_tick_state(self, tick, block_number) -> List[Union[int, bool]]:
 
-        tick_state = self.contract.functions.ticks(tick).call(block_identifier=int(block_number))
+        tick_state = self.contract.functions.ticks(int(tick)).call(block_identifier=int(block_number))
 
         if tick_state[-1]:
             return tick_state
@@ -59,3 +59,9 @@ class Provider:
         fee_growth_global_1 = self.contract.functions.feeGrowthGlobal1X128().call(block_identifier=int(block_number)) / (1 << 128)
 
         return fee_growth_global_0, fee_growth_global_1
+    
+    def get_liquidity(self, block_number) -> int:
+
+        liquidity = self.contract.functions.liquidity().call(block_identifier=int(block_number))
+
+        return liquidity

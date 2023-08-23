@@ -9,11 +9,6 @@ from provider import Provider
 from protocol_state import ProtocolState
 from position_manager import PositionManager
 
-BLOCK_INDEX = 0
-TICK_INDEX = 1
-LIQUIDITY_INDEX = 2
-
-NUM_BLOCKS = 5
 
 class Strategy:
 
@@ -29,15 +24,24 @@ class Strategy:
 
     def _evaluate(self):
 
+        # wait for first tick
+        while self.state.current_tick is None:
+            time.sleep(10)
+
         while self.evaluate:
+
+            # wait for first tick
+            if self.state.current_tick is None:
+                time.sleep(10)
+                continue
 
             if not self.provider.backtest:
                 time.sleep(60)
 
             past_data = np.stack(self.state.swap_data, axis=0)
 
-            last_block = int(past_data[-1, BLOCK_INDEX])
-            last_tick = int(past_data[-1, TICK_INDEX])
+            last_block = int(past_data[-1, self.state.BLOCK_INDEX])
+            last_tick = int(past_data[-1, self.state.TICK_INDEX])
 
             # evaluate open positions
             for index in self.position_manager.open_positions_index:
@@ -53,7 +57,7 @@ class Strategy:
                 #print("not engough data")
                 continue
 
-            past_ticks = reduced_data[-120:, TICK_INDEX]
+            past_ticks = reduced_data[-120:, self.state.TICK_INDEX]
 
             delta = np.diff(past_ticks)
             std = np.std(delta)
