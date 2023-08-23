@@ -137,10 +137,41 @@ def get_total_value_locked_in_tick(tick, liquidity):
 
     return total_value_locked
 
-def get_value_locked_for_tick_range(current_tick, liquidities):
+def get_value_locked_for_tick_range(current_tick, current_liquidity, tick_states, tick_range=100):
+        
+    current_tick_rounded = current_tick // 10 * 10
+
+    liquidities = [None for _ in range(0, 2 * tick_range + 10, 10)]
+    ticks = [current_tick - i for i in range(10, tick_range + 10, 10)] + [current_tick] + [current_tick + i for i in range(10, tick_range + 10, 10)]
+
+    liquidities[tick_range // 10] = current_liquidity
+
+    liquidity_tick_below = current_liquidity
+    liquidity_tick_above = current_liquidity
+
+
+    for i in range(0, tick_range, 10):
+
+        tick_state_below = tick_states[current_tick_rounded - i]
+        tick_state_above = tick_states[current_tick_rounded + 10 + i]
+
+        if tick_state_below:
+            liquidity_net_below = tick_state_below[1]
+            liquidity_tick_below = liquidity_tick_below - liquidity_net_below
+            liquidities[(tick_range - i - 10) // 10] = liquidity_tick_below
+        else:
+            liquidities[(tick_range - i - 10) // 10] = liquidity_tick_below
+            
+        if tick_state_above:
+            liquidity_net_above = tick_state_above[1]
+            liquidity_tick_above = liquidity_tick_above + liquidity_net_above
+            liquidities[(tick_range + i + 10) // 10] = liquidity_tick_above
+        else:
+            liquidities[(tick_range + i + 10) // 10] = liquidity_tick_above
+
 
     value_locked = []
-    for i in range(len(liquidities)):
-        value_locked.append(get_total_value_locked_in_tick(current_tick - len(liquidities) // 2 + i, liquidities[i]))
+    for tick, liquidity in zip(ticks, liquidities):
+        value_locked.append(get_total_value_locked_in_tick(tick, liquidity))
 
     return value_locked
