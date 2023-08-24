@@ -13,8 +13,7 @@ class ProtocolState:
 
     NUM_BLOCKS = 5
 
-
-    def __init__(self, provider, init=[], max_state_size=5000):
+    def __init__(self, provider, max_state_size=5000):
 
         self.provider = provider
 
@@ -23,7 +22,7 @@ class ProtocolState:
         self.current_liquidity = None
 
         # Event data
-        self.swap_data = init
+        self.swap_data = []
         self.mint_data = []
         self.burn_data = []
 
@@ -81,7 +80,6 @@ class ProtocolState:
             # TODO: Burn events
             new_burn_or_mint = False
             
-            
             if new_burn_or_mint or self.current_tick != self.swap_data[-1][1]:
 
                 self.current_liquidity = self.provider.get_liquidity(self.current_block)
@@ -94,7 +92,7 @@ class ProtocolState:
             if not self.provider.backtest:
                 time.sleep(12)
             else:
-                time.sleep(1)
+                time.sleep(0.2)
 
     def _get_tick_states(self, current_tick, block_number, get_all=False, tick_range=100) -> None:
 

@@ -142,12 +142,20 @@ def get_value_locked_for_tick_range(current_tick, current_liquidity, tick_states
     current_tick_rounded = current_tick // 10 * 10
 
     liquidities = [None for _ in range(0, 2 * tick_range + 10, 10)]
-    ticks = [current_tick - i for i in range(10, tick_range + 10, 10)] + [current_tick] + [current_tick + i for i in range(10, tick_range + 10, 10)]
+    ticks = [current_tick - i for i in range(tick_range, 0, -10)] + [current_tick] + [current_tick + i for i in range(10, tick_range + 10, 10)]
+    ticks_rounded = [tick // 10 * 10 for tick in ticks]
 
     liquidities[tick_range // 10] = current_liquidity
 
     liquidity_tick_below = current_liquidity
     liquidity_tick_above = current_liquidity
+
+    required_ticks = set(ticks_rounded)
+    available_tick_states = set(tick_states.keys())
+
+    if not required_ticks.issubset(available_tick_states):
+        # not all tick states are fetched yet -> check again later
+        return [], []
 
 
     for i in range(0, tick_range, 10):
@@ -174,4 +182,4 @@ def get_value_locked_for_tick_range(current_tick, current_liquidity, tick_states
     for tick, liquidity in zip(ticks, liquidities):
         value_locked.append(get_total_value_locked_in_tick(tick, liquidity))
 
-    return value_locked
+    return value_locked, ticks
