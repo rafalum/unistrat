@@ -46,9 +46,16 @@ class ProtocolState:
         while self.collect:
             
             # restrict state size
-            state_size = len(self.swap_data)
-            if state_size > self.max_state_size:
-                self.swap_data = self.swap_data[state_size-self.max_state_size:]
+            swap_state_size = len(self.swap_data)
+            mint_state_size = len(self.mint_data)
+            burn_state_size = len(self.burn_data)
+            if swap_state_size > self.max_state_size:
+                self.swap_data = self.swap_data[swap_state_size-self.max_state_size:]
+            if mint_state_size > self.max_state_size:
+                self.mint_data = self.mint_data[mint_state_size-self.max_state_size:]
+            if burn_state_size > self.max_state_size:
+                self.burn_data = self.burn_data[burn_state_size-self.max_state_size:]
+            
 
             # get the current block
             next_block = self.provider.get_current_block()
@@ -59,7 +66,6 @@ class ProtocolState:
                 continue
 
             self.current_block = next_block
-
             self.logger.info(f"#### Current block: {self.current_block} ####")
 
             # Swap events
@@ -71,15 +77,25 @@ class ProtocolState:
                 time.sleep(5)
                 continue
 
+            # Mint events
+            mint_events = self.provider.get_events(self.current_block, "Mint")
+            self.mint_data += mint_events
+
+            # Burn events
+            burn_events = self.provider.get_events(self.current_block, "Burn")
+            self.burn_data += burn_events
+
             # Just for logging
             for swap_event in swap_events:
                 self.logger.info(f"#### Swap event: {swap_event[1]} ####")
+            for mint_event in mint_events:
+                self.logger.info(f"#### Mint event: {mint_event[1]} - {mint_event[2]} ####")
+            for burn_event in burn_events:
+                self.logger.info(f"#### Burn event: {burn_event[1]} - {burn_event[2]} ####")
 
-
-            # TODO: Mint events
-            # TODO: Burn events
-            new_burn_or_mint = False
+            new_burn_or_mint = burn_events != [] or mint_events != []
             
+            # compute new liquidity and value locked if there is a new tick or a mint or burn event
             if new_burn_or_mint or self.current_tick != self.swap_data[-1][1]:
 
                 self.current_liquidity = self.provider.get_liquidity(self.current_block)

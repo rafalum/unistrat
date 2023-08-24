@@ -359,7 +359,7 @@ if __name__ == '__main__':
     contract = get_contract()
     node = get_provider()
     
-    provider = Provider(node, contract, backtest=False, data="../tinker/data/USDC_ETH_SWAPS_reduced.csv")
+    provider = Provider(node, contract, backtest=False, swap_data="data/Swap.csv", mint_data="data/Mint.csv", burn_data="data/Burn.csv")
     state = ProtocolState(provider)
     position_manager = PositionManager(provider, state)
     strategy = Strategy(provider, state, position_manager)

@@ -5,9 +5,9 @@ BLOCK_INDEX = 0
 
 
 class Provider:
-    def __init__(self, provider, contract, backtest=False, data=None):
+    def __init__(self, provider, contract, backtest=False, swap_data=None, mint_data=None, burn_data=None):
 
-        if backtest and not data:
+        if backtest and not swap_data:
             raise ValueError("Backtest set to true -> please specify data file")
 
         self.provider = provider
@@ -16,8 +16,11 @@ class Provider:
         self.backtest = backtest
 
         if backtest:
-            self.data = np.loadtxt(data, delimiter=",", dtype=float)
-            self.block_number = self.data[0, 0]
+            self.swap_data = np.loadtxt(swap_data, delimiter=",", dtype=float)
+            self.mint_data = np.loadtxt(mint_data, delimiter=",", dtype=float)
+            self.burn_data = np.loadtxt(burn_data, delimiter=",", dtype=float)
+
+            self.block_number = self.swap_data[0, 0]
   
     
     def get_tick_state(self, tick, block_number) -> List[Union[int, bool]]:
@@ -41,15 +44,28 @@ class Provider:
     def get_events(self, block_number, type):
 
         if self.backtest:
-            events = self.data[self.data[:, BLOCK_INDEX] == block_number]
-            event_data = events.tolist()
+            if type == "Swap":
+                swap_events = self.swap_data[self.swap_data[:, BLOCK_INDEX] == block_number]
+                event_data = swap_events.tolist()
+            elif type == "Mint":
+                mint_events = self.mint_data[self.mint_data[:, BLOCK_INDEX] == block_number]
+                event_data = mint_events.tolist()
+            elif type == "Burn":
+                burn_events = self.burn_data[self.burn_data[:, BLOCK_INDEX] == block_number]
+                event_data = burn_events.tolist()
+
         else:
             event_filter = self.contract.events[type].create_filter(fromBlock=block_number, toBlock=block_number+1)
             events = event_filter.get_all_entries()
             
             event_data = []
             for event in events:
-                event_data.append([event.blockNumber, event.args['tick'], event.args['liquidity'], event.args['sqrtPriceX96'], event.args['amount0'], event.args['amount1']])
+                if type == "Swap":
+                    event_data.append([event.blockNumber, event.args['tick'], event.args['liquidity'], event.args['sqrtPriceX96'], event.args['amount0'], event.args['amount1']])
+                elif type == "Mint":
+                    event_data.append([event.blockNumber, event.args['tickLower'], event.args['tickUpper'], event.args['amount0'], event.args['amount1']])
+                elif type == "Burn":
+                    event_data.append([event.blockNumber, event.args['tickLower'], event.args['tickUpper'], event.args['amount0'], event.args['amount1']])
 
         return event_data
     
