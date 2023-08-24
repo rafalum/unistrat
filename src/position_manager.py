@@ -22,7 +22,7 @@ class PositionManager:
 
         self.logger = logging.getLogger('logger1')
         self.logger.setLevel(logging.INFO)
-        handler = logging.FileHandler('position.log')
+        handler = logging.FileHandler('src/logs/position.log')
         formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)

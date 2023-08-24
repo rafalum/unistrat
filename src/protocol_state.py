@@ -35,7 +35,7 @@ class ProtocolState:
 
         self.logger = logging.getLogger('logger2')
         self.logger.setLevel(logging.INFO)
-        handler = logging.FileHandler('state.log')
+        handler = logging.FileHandler('src/logs/state.log')
         formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
