@@ -2,8 +2,8 @@
 
 ### What is UniBot?
 
-UniBot is a tool for liquidity providers in UniSwap v3. It has been shown that most LPs in Uniswap are loosing money as they are effectively selling short puts on the market (see [Guillames blog series](https://lambert-guillaume.medium.com/uniswap-v3-lp-tokens-as-perpetual-put-and-call-options-5b66219db827)).
-Without active management and careful choosing of the liquidity positions, most LPs are destined to loose money. UniBot tries to give LPs a way to codify their strategies.
+UniBot is a tool for liquidity providers in UniSwap v3. It has been shown that most LPs in Uniswap are loosing money as they are effectively selling short puts on the market (see [Guillaumes blog series](https://lambert-guillaume.medium.com/uniswap-v3-lp-tokens-as-perpetual-put-and-call-options-5b66219db827)).
+Without active management and careful choosing of the liquidity positions, most LPs are destined to loose money. UniBot tries to give LPs a way to codify and backtest their strategies.
 
 ![GUI](./gui.png)
 
