@@ -359,7 +359,7 @@ if __name__ == '__main__':
     contract = get_contract()
     node = get_provider()
     
-    provider = Provider(node, contract, backtest=False, swap_data="data/Swap.csv", mint_data="data/Mint.csv", burn_data="data/Burn.csv")
+    provider = Provider(node, contract, backtest=True, swap_data="data/Swap.csv", mint_data="data/Mint.csv", burn_data="data/Burn.csv")
     state = ProtocolState(provider)
     position_manager = PositionManager(provider, state)
     strategy = Strategy(provider, state, position_manager)
@@ -367,7 +367,7 @@ if __name__ == '__main__':
     state.start()
     strategy.start()
 
-    window = MainWindow(state, position_manager, backtest=False)
+    window = MainWindow(state, position_manager, backtest=True)
     window.setWindowTitle("UniSwap v3 USDC-ETH Interface")
     window.setGeometry(100, 100, 800, 600)
     window.show()
