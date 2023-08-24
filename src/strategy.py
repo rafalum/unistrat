@@ -3,7 +3,6 @@ import time
 import threading
 import numpy as np
 import pandas as pd
-from web3 import Web3
 
 from provider import Provider
 from protocol_state import ProtocolState
@@ -18,7 +17,7 @@ class Strategy:
         self.state = state
         self.position_manager = position_manager
 
-        self.evaluate = True
+        self.evaluate = False
         self.thread = threading.Thread(target=self._evaluate)
         
 
@@ -29,11 +28,6 @@ class Strategy:
             time.sleep(10)
 
         while self.evaluate:
-
-            # wait for first tick
-            if self.state.current_tick is None:
-                time.sleep(10)
-                continue
 
             if not self.provider.backtest:
                 time.sleep(60)
