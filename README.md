@@ -17,3 +17,6 @@ All the code lives in `src/` and contains the following components:
     - `position.py`: represents a UniSwap LP position
     - `position_manager.py`: manages the open and closed positions
     - `gui.py`: simple visual interface to display all relevant informations
+
+
+![Structure](./structure.png)
