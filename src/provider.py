@@ -21,6 +21,7 @@ class Provider:
             self.burn_data = np.loadtxt(burn_data, delimiter=",", dtype=float)
 
             self.block_number = self.swap_data[0, 0]
+            self.last_block = self.swap_data[-1, 0]
   
     
     def get_tick_state(self, tick, block_number) -> List[Union[int, bool]]:
@@ -37,6 +38,10 @@ class Provider:
         if self.backtest:
             current_block = self.block_number
             self.block_number += 1
+
+            if current_block > self.last_block:
+                return -1
+            
             return current_block
         else:
             return self.provider.eth.block_number
