@@ -1,8 +1,8 @@
 import math
 import logging
 
-from position import Position
-from utils import get_fee_growth_inside_last, real_reservers_to_virtal_reserves
+from .position import Position
+from .utils import get_fee_growth_inside_last, real_reservers_to_virtal_reserves
 
 
 
@@ -73,6 +73,8 @@ class PositionManager:
         if not upper_tick_state or not lower_tick_state:
             # tick not initialized -> discard position if simulation
             if self.provider.backtest:
+                self.open_positions_index.remove(index)
+                self.logger.info(f"Discarded position: {position.lower_tick} - {position.upper_tick}")
                 return
             
         fee_growth_global_0, fee_growth_global_1 = self.provider.get_growth_global(current_block)
