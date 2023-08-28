@@ -29,3 +29,12 @@ def tick_to_sqrt_price(tick):
 
 def tick_to_price(tick):
     return math.pow(1.0001, tick)
+
+def round_tick(tick):
+
+    rem = tick % 10
+
+    if rem < 5:
+        return int(tick - rem)
+    else:
+        return int(tick + 10 - rem)

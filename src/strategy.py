@@ -4,9 +4,11 @@ import threading
 import numpy as np
 import pandas as pd
 
-from provider import Provider
-from protocol_state import ProtocolState
-from position_manager import PositionManager
+from .uniwap_math import round_tick
+
+from .provider import Provider
+from .protocol_state import ProtocolState
+from .position_manager import PositionManager
 
 
 class Strategy:
@@ -34,12 +36,12 @@ class Strategy:
 
             past_data = np.stack(self.state.swap_data, axis=0)
 
-            last_block = int(past_data[-1, self.state.BLOCK_INDEX])
-            last_tick = int(past_data[-1, self.state.TICK_INDEX])
+            current_block = self.state.current_block
+            current_tick = self.state.current_tick
 
             # evaluate open positions
             for index in self.position_manager.open_positions_index:
-                if self.position_manager.positions_meta_data[index]["block"] + 60 * 5 <= last_block:
+                if self.position_manager.positions_meta_data[index]["block"] + 60 * 5 <= current_block:
                     self.position_manager.close_position(index)
 
             # evaluate new position
@@ -60,8 +62,9 @@ class Strategy:
                 time.sleep(2)
                 continue
 
-            upper_tick = int((last_tick + std * math.sqrt(60)) // 10 * 10)
-            lower_tick = int((last_tick - std * math.sqrt(60)) // 10 * 10)
+
+            upper_tick = round_tick((current_tick + std * math.sqrt(60)))
+            lower_tick = round_tick((current_tick - std * math.sqrt(60)))
             
             self.position_manager.open_position(lower_tick, upper_tick)
 
