@@ -4,14 +4,13 @@ from PySide6.QtGui import QPainter, QBrush, QFont
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QBarSeries, QBarSet, QValueAxis, QCategoryAxis
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QGridLayout, QGraphicsTextItem, QTableWidget, QTableWidgetItem, QHeaderView, QLabel
 
-from uniwap_math import tick_to_price
-from utils import get_contract, get_provider, get_volume_in_last_blocks, get_value_locked_for_tick_range
+from .utils import get_contract, get_provider, get_volume_in_last_blocks, get_value_locked_for_tick_range
 
-from strategy import Strategy
-from provider import Provider
-from position import Position
-from protocol_state import ProtocolState
-from position_manager import PositionManager
+from .strategy import Strategy
+from .provider import Provider
+from .position import Position
+from .protocol_state import ProtocolState
+from .position_manager import PositionManager
 
 class MainWindow(QMainWindow):
     def __init__(self, state, position_manager, backtest=False):
@@ -194,6 +193,9 @@ class MainWindow(QMainWindow):
             return
         elif self.previous_block == current_block:
             return
+        elif current_block == -1:
+            print("Finished backtest.")
+            return
         
         # remove the text item
         self.text_item.setPlainText("")
@@ -332,11 +334,6 @@ class MainWindow(QMainWindow):
 
         if self.counter > 300:  # keep a maximum of 300 points and remove older ones
             self.series.remove(0)
-            for i in range(self.series.count()):
-                point = self.series.at(i)
-                x = point.x()
-                y = point.y() 
-                self.series.replace(i, x-1, y)
 
 
         self.new_x_axis.setRange(current_block - 300, current_block)
@@ -359,7 +356,7 @@ if __name__ == '__main__':
     contract = get_contract()
     node = get_provider()
     
-    provider = Provider(node, contract, backtest=True, swap_data="data/Swap.csv", mint_data="data/Mint.csv", burn_data="data/Burn.csv")
+    provider = Provider(node, contract, backtest=False, swap_data="data/Swap.csv", mint_data="data/Mint.csv", burn_data="data/Burn.csv")
     state = ProtocolState(provider)
     position_manager = PositionManager(provider, state)
     strategy = Strategy(provider, state, position_manager)
