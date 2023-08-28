@@ -10,9 +10,6 @@ from .uniwap_math import calculate_fee_inside, tick_to_price, tick_to_sqrt_price
 
 load_dotenv()
 
-USDC_ETH_POOL_ADDRESS = "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"
-WBTC_ETH_POOL_ADDRESS = "0xCBCdF9626bC03E24f779434178A73a0B4bad62eD"
-
 def get_env_variable(var_name):
     return os.environ.get(var_name)
 
@@ -24,7 +21,9 @@ def get_provider():
 def get_contract():
     w3 = get_provider()
 
-    return w3.eth.contract(address=USDC_ETH_POOL_ADDRESS, abi=load_abi("pool"))
+    address = get_env_variable("USDC_ETH_POOL_ADDRESS")
+
+    return w3.eth.contract(address=address, abi=load_abi("pool"))
 
 def load_abi(name: str) -> str:
     path = f"{os.path.dirname(os.path.abspath(__file__))}/../assets/"
