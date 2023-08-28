@@ -1,0 +1,5 @@
+web3
+PySide6
+numpy
+pandas
+python-dotenv
