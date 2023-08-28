@@ -6,7 +6,7 @@ import numpy as np
 from web3 import Web3
 from dotenv import load_dotenv
 
-from uniwap_math import calculate_fee_inside, tick_to_price, tick_to_sqrt_price
+from .uniwap_math import calculate_fee_inside, tick_to_price, tick_to_sqrt_price
 
 load_dotenv()
 
@@ -31,6 +31,20 @@ def load_abi(name: str) -> str:
     with open(os.path.abspath(path + f"{name}.json")) as f:
         abi: str = json.load(f)
     return abi
+
+def check_data_exists(from_block, to_block):
+    
+        swap_data_exists = os.path.isfile(f"data/Swap.csv")
+        mint_data_exists = os.path.isfile(f"data/Mint.csv")
+        burn_data_exists = os.path.isfile(f"data/Burn.csv")
+    
+        if swap_data_exists and mint_data_exists and burn_data_exists:
+            swap_data = np.loadtxt("data/Swap.csv", delimiter=",", dtype=float)
+            if swap_data[-1, 0] + 20 >= to_block and swap_data[0, 0] - 20 <= from_block:
+                return True
+        else:
+            return False
+
 
 
 def real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, x_real=None, y_real=None):

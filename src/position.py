@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-from uniwap_math import tick_to_sqrt_price, tick_to_price
+from .uniwap_math import tick_to_sqrt_price, tick_to_price
 
 class Position:
 
