@@ -18,16 +18,24 @@ def get_provider():
 
     return Web3(Web3.HTTPProvider(provider_url))
 
-def get_contract():
+def get_contract(name):
     w3 = get_provider()
 
-    address = get_env_variable("USDC_ETH_POOL_ADDRESS")
+    address = get_env_variable(name)
 
-    return w3.eth.contract(address=address, abi=load_abi("pool"))
+    return w3.eth.contract(address=address, abi=load_abi(name))
 
 def load_abi(name: str) -> str:
+
+    if "POOL" in name:
+        abi = "pool"
+    elif "NFT" in name:
+        abi = "nft_manager"
+    else:
+        raise ValueError("Invalid contract name")
+
     path = f"{os.path.dirname(os.path.abspath(__file__))}/../assets/"
-    with open(os.path.abspath(path + f"{name}.json")) as f:
+    with open(os.path.abspath(path + f"{abi}.json")) as f:
         abi: str = json.load(f)
     return abi
 

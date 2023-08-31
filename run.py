@@ -52,9 +52,6 @@ def main():
 
     args = parser.parse_args()
 
-    contract = get_contract()
-    node = get_provider()
-
     if args.backtest:
         if args.from_block is None or args.to_block is None:
             parser.error("--backtest requires --from_block and --to_block.")
@@ -65,11 +62,11 @@ def main():
 
         if not data_exists:
             print("Collecting data...")
-            collect_events(contract, int(args.from_block), int(args.to_block))
+            collect_events(get_contract("USDC_ETH_POOL_ADDRESS"), int(args.from_block), int(args.to_block))
     else:
         print("Running in normal mode")
     
-    provider = Provider(node, contract, backtest=args.backtest, swap_data="data/Swap.csv", mint_data="data/Mint.csv", burn_data="data/Burn.csv")
+    provider = Provider(backtest=args.backtest, swap_data="data/Swap.csv", mint_data="data/Mint.csv", burn_data="data/Burn.csv")
     state = ProtocolState(provider)
     position_manager = PositionManager(provider, state)
     strategy = Strategy(provider, state, position_manager)

@@ -29,5 +29,5 @@ def collect_events(contract, from_block, to_block, events=["Swap", "Mint", "Burn
 
 
 if __name__ == "__main__":
-    contract = get_contract()
+    contract = get_contract("USDC_ETH_POOL_ADDRESS")
     collect_events(contract, 17000001, 17500001)
