@@ -57,3 +57,4 @@ All the code lives in `src/` and contains the following components:
 
 - currently only works for the [USDC-ETH pool](https://etherscan.io/address/0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640#events)
 - no ability to execute transactions
+- no unit tests
