@@ -74,7 +74,7 @@ def real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, x_re
         liquidity_inv = x_real_inv * (1 / current_sqrtPrice - 1 / upper_sqrtPrice)
         liquidity = math.pow(liquidity_inv, -1)
 
-        real = liquidity * (current_sqrtPrice * lower_sqrtPrice) # y_real
+        real = liquidity * (current_sqrtPrice - lower_sqrtPrice) # y_real
 
     else:
         return None, None
