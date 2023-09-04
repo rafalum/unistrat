@@ -18,6 +18,11 @@ def get_provider():
 
     return Web3(Web3.HTTPProvider(provider_url))
 
+def get_account():
+    pk = get_env_variable("ACCOUNT_PRIVATE_KEY")
+
+    return get_provider().eth.account.from_key(pk)
+
 def get_contract(name):
     w3 = get_provider()
 

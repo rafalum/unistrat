@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Tuple, List, Union
 
-from .utils import get_contract, get_provider
+from .utils import get_contract, get_provider, get_account
 
 from .position import Position
 
@@ -17,6 +17,8 @@ class Provider:
         self.provider = get_provider()
         self.pool_contract = get_contract("USDC_ETH_POOL_ADDRESS")
         self.nft_contract = get_contract("NFT_POSITION_MANAGER")
+
+        self.account = get_account()
 
         self.backtest = backtest
 
