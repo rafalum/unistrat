@@ -7,7 +7,6 @@ from .position import Position
 
 BLOCK_INDEX = 0
 
-
 class Provider:
     def __init__(self, backtest=False, swap_data=None, mint_data=None, burn_data=None):
 
@@ -52,6 +51,11 @@ class Provider:
             return current_block
         else:
             return self.provider.eth.block_number
+    
+    def get_current_tick(self, block) -> int:
+        
+        slot0 = self.contract.functions.slot0().call(block_identifier=int(block))
+        return slot0[1]
         
     def get_events(self, block_number, type):
 

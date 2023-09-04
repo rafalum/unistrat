@@ -2,12 +2,14 @@ import math
 import logging
 
 from .position import Position
+from .provider import Provider
+from .protocol_state import ProtocolState
+
 from .utils import get_fee_growth_inside_last, real_reservers_to_virtal_reserves
 
 
-
 class PositionManager:
-    def __init__(self, provider, state):
+    def __init__(self, provider: Provider, state: ProtocolState):
 
         self.provider = provider
         self.state = state
@@ -30,7 +32,7 @@ class PositionManager:
     def open_position(self, lower_tick, upper_tick) -> None:
 
         current_block = self.state.current_block
-        current_tick = self.state.current_tick
+        current_tick = self.provider.get_current_tick(current_block)
 
         upper_tick_state = self.provider.get_tick_state(upper_tick, current_block)
         lower_tick_state = self.provider.get_tick_state(lower_tick, current_block)
@@ -39,8 +41,6 @@ class PositionManager:
             # tick not initialized -> discard position if simulation
             if self.provider.backtest:
                 return
-            
-        self.logger.info(f"Opened position: {lower_tick} - {upper_tick}")
         
         fee_growth_global_0, fee_growth_global_1 = self.provider.get_growth_global(current_block)
 
@@ -51,6 +51,8 @@ class PositionManager:
 
         position = Position(current_tick, lower_tick, upper_tick, liquidity, fee_growth_inside_0_last, fee_growth_inside_1_last)
 
+        self.logger.info(f"Opened position: {lower_tick} - {upper_tick}")
+        
         self.positions.append(position)
         self.open_positions_index.append(len(self.positions) - 1)
         self.positions_meta_data.append({"block": current_block, "tick": current_tick})
@@ -65,7 +67,7 @@ class PositionManager:
         lower_tick = position.lower_tick
 
         current_block = self.state.current_block
-        current_tick = self.state.current_tick
+        current_tick = self.provider.get_current_tick(current_block)
 
         upper_tick_state = self.provider.get_tick_state(upper_tick, current_block)
         lower_tick_state = self.provider.get_tick_state(lower_tick, current_block)
