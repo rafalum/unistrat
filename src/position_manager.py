@@ -33,6 +33,7 @@ class PositionManager:
 
         current_block = self.state.current_block
         current_tick = self.provider.get_current_tick(current_block)
+        current_sqrt_price = self.provider.get_current_sqrt_price(current_block)
 
         upper_tick_state = self.provider.get_tick_state(upper_tick, current_block)
         lower_tick_state = self.provider.get_tick_state(lower_tick, current_block)
@@ -46,16 +47,33 @@ class PositionManager:
 
         fee_growth_inside_0_last, fee_growth_inside_1_last = get_fee_growth_inside_last(lower_tick_state, upper_tick_state, lower_tick, upper_tick, current_tick, fee_growth_global_0, fee_growth_global_1)
 
-        x_virt, y_virt, x_real = real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, y_real=10**18)
+        y_real = 10**18
+        x_virt, y_virt, x_real = real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, current_sqrt_price, y_real=y_real)
         liquidity = math.sqrt(x_virt * y_virt)
 
         position = Position(current_tick, lower_tick, upper_tick, liquidity, fee_growth_inside_0_last, fee_growth_inside_1_last)
 
-        self.logger.info(f"Opened position: {lower_tick} - {upper_tick}")
-        
+        if self.provider.backtest or self.provider.simulate:
+
+            actual_amount_token0 = x_real
+            actual_amount_token1 = y_real
+
+            token_id = len(self.positions) - 1
+
+        else:
+
+            mint_tx_hash, mint_tx_receipt = self.provider.mint_position(position, current_tick, current_sqrt_price)
+
+            actual_amount_token0 = int.from_bytes(mint_tx_receipt["logs"][0]["data"][-32:])
+            actual_amount_token1 = int.from_bytes(mint_tx_receipt["logs"][1]["data"][-32:])
+
+            token_id = int.from_bytes(mint_tx_receipt["logs"][3]["topics"][-1], byteorder="big")
+
+        self.logger.info(f"Opened position - TokenID: {token_id} - Range: {lower_tick} - {upper_tick}")
+            
         self.positions.append(position)
         self.open_positions_index.append(len(self.positions) - 1)
-        self.positions_meta_data.append({"block": current_block, "tick": current_tick})
+        self.positions_meta_data.append({"block": current_block, "tick": current_tick, "token_id": token_id, "amount_token0": actual_amount_token0, "amount_token1": actual_amount_token1})
 
         return
 
@@ -88,6 +106,8 @@ class PositionManager:
         value_position = position.value_position(current_tick)
 
         self.performance.append({"accumulated_fees": accumulated_fees, "value_hold": value_hold, "value_position": value_position})
+
+        burn_tx = self.provider.burn_position(position, current_tick)
 
         self.logger.info(f"Closed position: {position.lower_tick} - {position.upper_tick}")
 

@@ -65,6 +65,27 @@ def check_data_exists(from_block, to_block):
                 return True
         else:
             return False
+        
+def check_enough_balance(current_tick, balance_token0, balance_token1, amount_token0, amount_token1):
+    current_price = tick_to_price(current_tick)
+
+    if balance_token0 < amount_token0 and balance_token1 < amount_token1:
+        # not enough of eiter token
+        return False
+    elif balance_token0 < amount_token0:
+        # not enough of token0 -> check if enough if excess token1 is swapped to token0
+        if balance_token0 + (balance_token1 - amount_token1) / current_price < amount_token0:
+            return False
+        else:
+            return True
+    elif balance_token1 < amount_token1:
+        # not enough of token1 -> check if enough if excess token0 is swapped to token1
+        if balance_token1 + (balance_token0 - amount_token0) * current_price < amount_token1:
+            return False
+        else:
+            return True
+    else:
+        return True
 
 def real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, current_sqrt_price, x_real=None, y_real=None):
 
