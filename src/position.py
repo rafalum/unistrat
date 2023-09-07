@@ -25,10 +25,10 @@ class Position:
         return math.pow(1.0001, tick)
 
     
-    def amount_x(self, current_tick):
+    def amount_x(self, current_tick, current_sqrt_price):
 
         price_lower_tick = tick_to_sqrt_price(self.lower_tick)
-        price_current_tick = tick_to_sqrt_price(current_tick)
+        price_current_tick = current_sqrt_price
         price_upper_tick = tick_to_sqrt_price(self.upper_tick)
 
         if current_tick < self.lower_tick:
@@ -42,10 +42,10 @@ class Position:
 
         return self.liquidity * value
     
-    def amount_y(self, current_tick):
+    def amount_y(self, current_tick, current_sqrt_price):
 
         price_lower_tick = tick_to_sqrt_price(self.lower_tick)
-        price_current_tick = tick_to_sqrt_price(current_tick)
+        price_current_tick = current_sqrt_price
         price_upper_tick = tick_to_sqrt_price(self.upper_tick)
 
         if current_tick < self.lower_tick:
