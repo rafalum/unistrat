@@ -6,7 +6,7 @@ import numpy as np
 from web3 import Web3
 from dotenv import load_dotenv
 
-from .uniwap_math import calculate_fee_inside, tick_to_price, tick_to_sqrt_price, get_sqrt_ratio_at_tick
+from .uniwap_math import calculate_fee_inside, tick_to_price, tick_to_sqrt_price
 
 load_dotenv()
 

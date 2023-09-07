@@ -25,7 +25,7 @@ def calculate_fee_inside(lower_tick, upper_tick, current_tick, lower_tick_fee_gr
 
 
 def tick_to_sqrt_price(tick):
-    return math.pow(1.0001, tick // 2)
+    return math.pow(1.0001, tick / 2)
 
 def tick_to_price(tick):
     return math.pow(1.0001, tick)
