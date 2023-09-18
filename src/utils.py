@@ -181,7 +181,7 @@ def get_volume_in_last_blocks(swap_data, block_interval_size=12, number_volume=6
 
 def get_total_value_locked_in_tick(tick, liquidity):
 
-    x_real, y_real = virtual_reserves_to_real_reserves(tick, liquidity)
+    x_real, y_real = total_value_in_tick(tick, tick_to_sqrt_price(tick), liquidity)
 
     total_value_locked = x_real * tick_to_price(tick) / 10**18 + y_real / 10**18
 

@@ -53,12 +53,14 @@ class PositionManager:
 
         position = Position(current_tick, lower_tick, upper_tick, liquidity, fee_growth_inside_0_last, fee_growth_inside_1_last)
 
-        if self.provider.backtest or self.provider.simulate:
+        if self.provider.backtest or self.provider.sim:
 
             actual_amount_token0 = x_real
             actual_amount_token1 = y_real
 
             token_id = len(self.positions) - 1
+
+            position.token_id = token_id
 
         else:
 
@@ -68,6 +70,8 @@ class PositionManager:
             actual_amount_token1 = int.from_bytes(mint_tx_receipt["logs"][1]["data"][-32:])
 
             token_id = int.from_bytes(mint_tx_receipt["logs"][3]["topics"][-1], byteorder="big")
+
+            position.token_id = token_id
 
         self.logger.info(f"Opened position - TokenID: {token_id} - Range: {lower_tick} - {upper_tick}")
             
@@ -101,13 +105,19 @@ class PositionManager:
 
         fee_growth_inside_0_last, fee_growth_inside_1_last = get_fee_growth_inside_last(lower_tick_state, upper_tick_state, lower_tick, upper_tick, current_tick, fee_growth_global_0, fee_growth_global_1)
 
+        # TODO: get actual performance metrics from the blockchain if not simulation
         accumulated_fees = position.accumulated_fees(current_tick, fee_growth_inside_0_last, fee_growth_inside_1_last)
         value_hold = position.value_hold(current_tick)
         value_position = position.value_position(current_tick)
 
         self.performance.append({"accumulated_fees": accumulated_fees, "value_hold": value_hold, "value_position": value_position})
 
-        burn_tx = self.provider.burn_position(position, current_tick)
+        if self.provider.backtest or self.provider.sim:
+            burn_tx_receipt = None
+            collect_tx_receipt = None
+        
+        else:
+            burn_tx, burn_tx_receipt, collect_tx_receipt = self.provider.burn_position(position, current_tick)
 
         self.logger.info(f"Closed position: {position.lower_tick} - {position.upper_tick}")
 

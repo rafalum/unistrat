@@ -10,7 +10,7 @@ from .position import Position
 BLOCK_INDEX = 0
 
 class Provider:
-    def __init__(self, sim=False, backtest=False, swap_data=None, mint_data=None, burn_data=None, test=True):
+    def __init__(self, sim=False, backtest=False, swap_data=None, mint_data=None, burn_data=None, test=False):
 
         if backtest and not swap_data:
             raise ValueError("Backtest set to true -> please specify data file")
@@ -242,4 +242,52 @@ class Provider:
         return mint_tx_hash, mint_tx_receipt
     
     def burn_position(self, position: Position, current_tick):
-        pass
+
+        token_id = position.token_id
+
+        position = self.nft_contract.functions.positions(token_id).call()
+
+        # 1. decrease liquidity
+        self.logger.info(f"Decreasing liquidity of position {token_id}")
+        liquidity = position[7]
+
+        decrease_liquidity_tx = self.nft_contract.functions.decreaseLiquidity((
+            token_id,
+            liquidity,
+            0,
+            0,
+            int(time.time()) + 10 * 60
+        )).build_transaction({
+            'from': self.account.address,
+            'gas': 500000,
+            'nonce': self.provider.eth.get_transaction_count(self.account.address)
+        })
+
+        txn_hash, _ = self.sign_and_broadcast_transaction(decrease_liquidity_tx)
+
+        # 2. collect fees
+        self.logger.info(f"Collecting fees of position {token_id}")
+        collect_tx = self.nft_contract.functions.collect((
+            token_id,
+            self.account.address,
+            2 ** 128 - 1,
+            2 ** 128 - 1
+        )).build_transaction({
+            'from': self.account.address,
+            'gas': 500000,
+            'nonce': self.provider.eth.get_transaction_count(self.account.address)
+        })
+
+        collect_txn_hash, collect_tx_receipt  = self.sign_and_broadcast_transaction(collect_tx)
+
+        # 3. burn position
+        self.logger.info(f"Burning position {token_id}")
+        burn_tx = self.nft_contract.functions.burn((token_id)).build_transaction({
+            'from': self.account.address,
+            'gas': 500000,
+            'nonce': self.provider.eth.get_transaction_count(self.account.address)
+        })
+
+        burn_tx_hash, burn_tx_receipt = self.sign_and_broadcast_transaction(burn_tx)
+
+        return burn_tx_hash, burn_tx_receipt, collect_tx_receipt
