@@ -30,6 +30,7 @@ Finally, you can run the code. There are several options available:
 | Flags      | Description |
 | ----------- | ----------- |
 | --gui       | runs the code with the GUI (as shown above)|
+| --simulate  | runs the code on live data but without making transactions |
 | --backest   | runs the code in backtesting mode |
 | --from_block| specifies which block to start the backtesting |
 | --to_block  | specifies which block to finish the backtesting |

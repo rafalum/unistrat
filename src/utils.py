@@ -13,20 +13,27 @@ load_dotenv()
 def get_env_variable(var_name):
     return os.environ.get(var_name)
 
-def get_provider():
-    provider_url = get_env_variable("MAINNET_PROVIDER")
+def get_provider(test=False):
+    if test:
+        provider_url = get_env_variable("LOCAL_PROVIDER")
+    else:
+        provider_url = get_env_variable("MAINNET_PROVIDER")
 
     return Web3(Web3.HTTPProvider(provider_url))
 
-def get_account():
-    pk = get_env_variable("ACCOUNT_PRIVATE_KEY")
+def get_account(test=False):
+    if test:
+        pk = get_env_variable("TEST_ACCOUNT_PRIVATE_KEY")
+    else:
+        pk = get_env_variable("ACCOUNT_PRIVATE_KEY")
 
-    return get_provider().eth.account.from_key(pk)
+    return get_provider(test=test).eth.account.from_key(pk)
 
-def get_contract(name):
-    w3 = get_provider()
+def get_contract(name, address=None, test=False):
+    w3 = get_provider(test=test)
 
-    address = get_env_variable(name)
+    if address is None:
+        address = get_env_variable(name)
 
     return w3.eth.contract(address=address, abi=load_abi(name))
 
@@ -36,8 +43,10 @@ def load_abi(name: str) -> str:
         abi = "pool"
     elif "NFT" in name:
         abi = "nft_manager"
+    elif "ROUTER" in name:
+        abi = "router"
     else:
-        raise ValueError("Invalid contract name")
+        abi = name.lower()
 
     path = f"{os.path.dirname(os.path.abspath(__file__))}/../assets/"
     with open(os.path.abspath(path + f"{abi}.json")) as f:
@@ -56,30 +65,45 @@ def check_data_exists(from_block, to_block):
                 return True
         else:
             return False
+        
+def check_enough_balance(current_tick, balance_token0, balance_token1, amount_token0, amount_token1):
+    current_price = tick_to_price(current_tick)
 
+    if balance_token0 < amount_token0 and balance_token1 < amount_token1:
+        # not enough of eiter token
+        return False
+    elif balance_token0 < amount_token0:
+        # not enough of token0 -> check if enough if excess token1 is swapped to token0
+        if balance_token0 + (balance_token1 - amount_token1) / current_price < amount_token0:
+            return False
+        else:
+            return True
+    elif balance_token1 < amount_token1:
+        # not enough of token1 -> check if enough if excess token0 is swapped to token1
+        if balance_token1 + (balance_token0 - amount_token0) * current_price < amount_token1:
+            return False
+        else:
+            return True
+    else:
+        return True
 
-
-def real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, x_real=None, y_real=None):
+def real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, current_sqrt_price, x_real=None, y_real=None):
 
     lower_sqrtPrice = tick_to_sqrt_price(lower_tick)
-    current_sqrtPrice = tick_to_sqrt_price(current_tick)
+    current_sqrtPrice = current_sqrt_price
     upper_sqrtPrice = tick_to_sqrt_price(upper_tick)
 
     if y_real:
-        y_real_inv = math.pow(y_real, -1)
 
-        liquidity_inv = y_real_inv * (current_sqrtPrice - lower_sqrtPrice)
-        liquidity = math.pow(liquidity_inv, -1)
+        liquidity = (1 / (current_sqrtPrice - lower_sqrtPrice)) * y_real
 
-        real = liquidity *(1 / current_sqrtPrice - 1 / upper_sqrtPrice) # x_real
+        real = ((upper_sqrtPrice - current_sqrtPrice) / (upper_sqrtPrice * current_sqrtPrice)) * liquidity # x_real
         
     elif x_real:
-        x_real_inv = math.pow(x_real, -1)
 
-        liquidity_inv = x_real_inv * (1 / current_sqrtPrice - 1 / upper_sqrtPrice)
-        liquidity = math.pow(liquidity_inv, -1)
+        liquidity = (1 / (1 / current_sqrtPrice - 1 / upper_sqrtPrice)) * x_real
 
-        real = liquidity * (current_sqrtPrice - lower_sqrtPrice) # y_real
+        real = (current_sqrtPrice - lower_sqrtPrice) * liquidity # y_real
 
     else:
         return None, None
@@ -89,14 +113,14 @@ def real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, x_re
 
     return x_virt, y_virt, real
 
-def virtual_reserves_to_real_reserves(current_tick, liquidity):
+def virtual_reserves_to_real_reserves(lower_tick, upper_tick, current_tick, current_sqrt_price, liquidity):
 
-    lower_sqrtPrice = tick_to_sqrt_price(current_tick - 5)
-    sqrtPrice = tick_to_sqrt_price(current_tick)
-    upper_sqrtPrice = tick_to_sqrt_price(current_tick + 5)
+    lower_sqrtPrice = tick_to_sqrt_price(lower_tick)
+    current_sqrtPrice = current_sqrt_price
+    upper_sqrtPrice = tick_to_sqrt_price(upper_tick)
 
-    x_virt = liquidity / sqrtPrice
-    y_virt = liquidity * sqrtPrice
+    x_virt = liquidity / current_sqrtPrice
+    y_virt = liquidity * current_sqrtPrice
 
     x_real = x_virt - liquidity / upper_sqrtPrice
     y_real = y_virt - liquidity * lower_sqrtPrice
@@ -157,7 +181,7 @@ def get_volume_in_last_blocks(swap_data, block_interval_size=12, number_volume=6
 
 def get_total_value_locked_in_tick(tick, liquidity):
 
-    x_real, y_real = virtual_reserves_to_real_reserves(tick, liquidity)
+    x_real, y_real = total_value_in_tick(tick, tick_to_sqrt_price(tick), liquidity)
 
     total_value_locked = x_real * tick_to_price(tick) / 10**18 + y_real / 10**18
 

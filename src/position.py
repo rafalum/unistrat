@@ -17,6 +17,8 @@ class Position:
         self.fee_growth_inside_0_last = fee_growth_inside_0_last
         self.fee_growth_inside_1_last = fee_growth_inside_1_last
 
+        self.token_id = None
+
     def __str__(self):
 
         return f"Lower Tick: {self.lower_tick}, Init Tick: {self.init_tick}, Upper Tick: {self.upper_tick}, Liquidity: {self.liquidity}"
@@ -25,11 +27,17 @@ class Position:
         return math.pow(1.0001, tick)
 
     
-    def amount_x(self, current_tick):
+    def amount_x(self, current_tick, current_sqrt_price=None):
 
         price_lower_tick = tick_to_sqrt_price(self.lower_tick)
-        price_current_tick = tick_to_sqrt_price(current_tick)
         price_upper_tick = tick_to_sqrt_price(self.upper_tick)
+
+        # if the exact sqrt price is given, use it
+        if current_sqrt_price:
+            price_current_tick = current_sqrt_price
+        else:
+            price_current_tick = tick_to_sqrt_price(current_tick)
+
 
         if current_tick < self.lower_tick:
             value = 1 / price_lower_tick - 1 / price_upper_tick
@@ -42,11 +50,16 @@ class Position:
 
         return self.liquidity * value
     
-    def amount_y(self, current_tick):
+    def amount_y(self, current_tick, current_sqrt_price=None):
 
         price_lower_tick = tick_to_sqrt_price(self.lower_tick)
-        price_current_tick = tick_to_sqrt_price(current_tick)
         price_upper_tick = tick_to_sqrt_price(self.upper_tick)
+
+        # if the exact sqrt price is given, use it
+        if current_sqrt_price:
+            price_current_tick = current_sqrt_price
+        else:
+            price_current_tick = tick_to_sqrt_price(current_tick)
 
         if current_tick < self.lower_tick:
             value = 0
