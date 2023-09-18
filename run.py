@@ -26,6 +26,13 @@ def main():
     )
 
     parser.add_argument(
+        "--simulate",
+        action='store_true',
+        default=False,
+        help="Real time execution but without making trades.",
+    )
+
+    parser.add_argument(
         "--backtest",
         action='store_true',
         default=False,
@@ -62,11 +69,11 @@ def main():
 
         if not data_exists:
             print("Collecting data...")
-            collect_events(get_contract("USDC_ETH_POOL_ADDRESS"), int(args.from_block), int(args.to_block))
+            collect_events(get_contract("USDC_ETH_POOL"), int(args.from_block), int(args.to_block))
     else:
         print("Running in normal mode")
     
-    provider = Provider(backtest=args.backtest, swap_data="data/Swap.csv", mint_data="data/Mint.csv", burn_data="data/Burn.csv")
+    provider = Provider(sim=args.simulate, backtest=args.backtest, swap_data="data/Swap.csv", mint_data="data/Mint.csv", burn_data="data/Burn.csv")
     state = ProtocolState(provider)
     position_manager = PositionManager(provider, state)
     strategy = Strategy(provider, state, position_manager)
