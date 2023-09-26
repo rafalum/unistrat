@@ -8,6 +8,10 @@ from src.utils import get_contract
 
 def collect_events(contract, from_block, to_block, events=["Swap", "Mint", "Burn"]):
 
+    # check if data folder exists
+    if not os.path.exists("data"):
+        os.makedirs("data")
+
     increment = min(2000, to_block - from_block)
     for i in range(from_block, to_block, increment):
 
