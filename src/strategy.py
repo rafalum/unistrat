@@ -21,7 +21,6 @@ class Strategy:
 
         self.evaluate = False
         self.thread = threading.Thread(target=self._evaluate)
-        
 
     def _evaluate(self):
 
@@ -34,39 +33,63 @@ class Strategy:
             if not self.provider.backtest:
                 time.sleep(60)
 
-            past_data = np.stack(self.state.swap_data, axis=0)
+            past_swap_data = np.stack(self.state.swap_data, axis=0) if self.state.swap_data else np.array([])
+            past_mint_data = np.stack(self.state.mint_data, axis=0) if self.state.mint_data else np.array([])
+            past_burn_data = np.stack(self.state.burn_data, axis=0) if self.state.burn_data else np.array([])
 
             current_block = self.state.current_block
             current_tick = self.state.current_tick
 
-            # evaluate open positions
-            for index in self.position_manager.open_positions_index:
-                if self.position_manager.positions_meta_data[index]["block"] + 60 * 5 <= current_block:
-                    self.position_manager.close_position(index)
+            self._strategy(past_swap_data, past_mint_data, past_burn_data, current_block, current_tick)
 
-            # evaluate new position
-            data = pd.DataFrame(past_data)
-            reduced_data = data.groupby(data.iloc[:,0] // 5).apply(lambda x: x.iloc[-1]).to_numpy()
+    def _strategy(self, past_swap_data: np.ndarray, past_mint_data: np.ndarray, past_burn_data: np.ndarray, current_block: int, current_tick: int) -> None:
 
-            # not enough data to make informed decision
-            if reduced_data.shape[0] < 120:
-                #print("not engough data")
-                continue
+        """
+        Implement your strategy here (closing and opening of positions)
 
-            past_ticks = reduced_data[-120:, self.state.TICK_INDEX]
+        :param past_swap_data: contains the last swap data
+        :param past_mint_data: contains the last mint data
+        :param past_burn_data: contains the last burn data
+        :param current_block: : contains the current block number
+        :param current_tick: contains the current tick
+        :return: None
+        """
 
-            delta = np.diff(past_ticks)
-            std = np.std(delta)
+        # Simple example strategy: 
+        #  - close all positions after 5 * 60 blocks (~ 1 hour assuming a block time of 12 seconds)
+        #  - open a new position if no position is open AND the past 120 ticks are within 1 standard deviation of the current tick
+        #  - tick range of new position is the standard deviation of the past 2 hours
 
-            if std > 10 or len(self.position_manager.open_positions_index) > 0:
-                time.sleep(2)
-                continue
+        # evaluate open positions
+        for index in self.position_manager.open_positions_index:
+            if self.position_manager.positions_meta_data[index]["block"] + 60 * 5 <= current_block:
+                self.position_manager.close_position(index)
 
+        # consider every 5th block in order to get minute-by-minute data
+        data = pd.DataFrame(past_swap_data)
+        reduced_data = data.groupby(data.iloc[:,0] // 5).apply(lambda x: x.iloc[-1]).to_numpy()
 
-            upper_tick = round_tick((current_tick + std * math.sqrt(60)))
-            lower_tick = round_tick((current_tick - std * math.sqrt(60)))
-            
-            self.position_manager.open_position(lower_tick, upper_tick)
+        # not enough data to make informed decision
+        if reduced_data.shape[0] < 120:
+            return
+
+        # consider the last 2 hours
+        last_2_hours = reduced_data[-120:, self.state.TICK_INDEX]
+
+        # calculate the standard deviation of the minute-by-minute tick change
+        delta = np.diff(last_2_hours)
+        std = np.std(delta)
+
+        # too much volatility or already open position
+        if std > 10 or len(self.position_manager.open_positions_index) > 0:
+            time.sleep(2)
+            return
+
+        # open a new position -> extrapolate the minute-by-minute std to 1 hour
+        upper_tick = round_tick((current_tick + std * math.sqrt(60)))
+        lower_tick = round_tick((current_tick - std * math.sqrt(60)))
+        
+        self.position_manager.open_position(lower_tick, upper_tick, y_real=10**18)
 
     def start(self):
         self.evaluate = True
