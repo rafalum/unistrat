@@ -29,7 +29,7 @@ class PositionManager:
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
-    def open_position(self, lower_tick, upper_tick) -> None:
+    def open_position(self, lower_tick, upper_tick, x_real=None, y_real=None) -> None:
 
         current_block = self.state.current_block
         current_tick = self.provider.get_current_tick(current_block)
@@ -47,8 +47,11 @@ class PositionManager:
 
         fee_growth_inside_0_last, fee_growth_inside_1_last = get_fee_growth_inside_last(lower_tick_state, upper_tick_state, lower_tick, upper_tick, current_tick, fee_growth_global_0, fee_growth_global_1)
 
-        y_real = 10**18
-        x_virt, y_virt, x_real = real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, current_sqrt_price, y_real=y_real)
+        if x_real is None:
+            x_virt, y_virt, x_real = real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, current_sqrt_price, y_real=y_real)
+        elif y_real is None:
+            x_virt, y_virt, x_real = real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, current_sqrt_price, x_real=x_real)
+        
         liquidity = math.sqrt(x_virt * y_virt)
 
         position = Position(current_tick, lower_tick, upper_tick, liquidity, fee_growth_inside_0_last, fee_growth_inside_1_last)
