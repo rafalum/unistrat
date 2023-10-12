@@ -5,6 +5,7 @@ import psutil
 import signal
 import unittest
 import subprocess
+from web3 import Web3
 
 from src.utils import get_contract, get_account, get_provider, get_env_variable
 
@@ -32,19 +33,35 @@ class TestMint(unittest.TestCase):
 
         time.sleep(10)
 
-        self.w3 = get_provider(test=True)
-        self.account = get_account(test=True)
+        if os.getenv('GITHUB_ACTIONS') == 'true':
 
-        self.pool_contract = get_contract("USDC_ETH_POOL", test=True)
-        self.router_contract = get_contract("UNISWAP_ROUTER", test=True)
-        self.nft_contract = get_contract("NFT_POSITION_MANAGER", test=True)
+            self.w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:8545"))
+            self.account = self.w3.eth.account.from_key(os.getenv('TEST_ACCOUNT_PRIVATE_KEY'))
 
-        self.token0_address = self.pool_contract.functions.token0().call()
-        self.token1_address = self.pool_contract.functions.token1().call()
-        self.fee = self.pool_contract.functions.fee().call()
+            self.pool_contract = get_contract("USDC_ETH_POOL", address="0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640", test=True)
+            self.router_contract = get_contract("UNISWAP_ROUTER", address="0xE592427A0AEce92De3Edee1F18E0157C05861564", test=True)
+            self.nft_contract = get_contract("NFT_POSITION_MANAGER", address="0xC36442b4a4522E871399CD717aBDD847Ab11FE88", test=True)
 
-        self.token0_contract = get_contract("token0", self.token0_address, test=True)
-        self.token1_contract = get_contract("token1", self.token1_address, test=True) 
+            self.token0_address = self.pool_contract.functions.token0().call()
+            self.token1_address = self.pool_contract.functions.token1().call()
+            self.fee = self.pool_contract.functions.fee().call()
+
+            self.token0_contract = get_contract("token0", self.token0_address, test=True)
+            self.token1_contract = get_contract("token1", self.token1_address, test=True) 
+        else:
+            self.w3 = get_provider(test=True)
+            self.account = get_account(test=True)
+
+            self.pool_contract = get_contract("USDC_ETH_POOL", test=True)
+            self.router_contract = get_contract("UNISWAP_ROUTER", test=True)
+            self.nft_contract = get_contract("NFT_POSITION_MANAGER", test=True)
+
+            self.token0_address = self.pool_contract.functions.token0().call()
+            self.token1_address = self.pool_contract.functions.token1().call()
+            self.fee = self.pool_contract.functions.fee().call()
+
+            self.token0_contract = get_contract("token0", self.token0_address, test=True)
+            self.token1_contract = get_contract("token1", self.token1_address, test=True) 
 
         self.token0_decimals = self.token0_contract.functions.decimals().call()
         self.token1_decimals = self.token1_contract.functions.decimals().call()
