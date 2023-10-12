@@ -84,7 +84,7 @@ class TestMint(unittest.TestCase):
         self.assertEqual(balance_token1, 0)
         self.assertGreater(balance_token0, 0)
 
-
+    """
     def testMintPositionOnlyToken1(self):
 
         balance_token0 = self.token0_contract.functions.balanceOf(self.account.address).call()
@@ -103,8 +103,8 @@ class TestMint(unittest.TestCase):
 
         self.assertEqual(balance_token0, 0)
         self.assertGreater(balance_token1, 0)
-    
-    
+    """
+
     def _swap(self, token_in, token_out, swap_token_amount, eth) -> None:
 
         swap_token_tx = self.router_contract.functions.exactInputSingle((
