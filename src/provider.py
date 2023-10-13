@@ -3,9 +3,9 @@ import logging
 import numpy as np
 from typing import Tuple, List, Union
 
-from .utils import get_contract, get_provider, get_account, check_enough_balance, tick_to_price
-
 from .position import Position
+from .config import UNISWAP_POOL, UNISWAP_ROUTER, NFT_POSITION_MANAGER
+from .utils import get_contract, get_provider, get_account, check_enough_balance, tick_to_price
 
 BLOCK_INDEX = 0
 
@@ -17,9 +17,9 @@ class Provider:
 
         self.provider = get_provider(test=test)
 
-        self.pool_contract = get_contract("USDC_ETH_POOL", test=test)
-        self.router_contract = get_contract("UNISWAP_ROUTER", test=test)
-        self.nft_contract = get_contract("NFT_POSITION_MANAGER", test=test)
+        self.pool_contract = get_contract("USDC_ETH_POOL", UNISWAP_POOL, test=test)
+        self.router_contract = get_contract("UNISWAP_ROUTER", UNISWAP_ROUTER, test=test)
+        self.nft_contract = get_contract("NFT_POSITION_MANAGER", NFT_POSITION_MANAGER, test=test)
 
         self.token0_address = self.pool_contract.functions.token0().call()
         self.token1_address = self.pool_contract.functions.token1().call()

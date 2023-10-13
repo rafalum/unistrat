@@ -19,10 +19,7 @@ conda activate unistrat
 Next, you need to create a `.env` file with the following two entries:
 ```bash
 ACCOUNT_PRIVATE_KEY=<PRIVATE_KEY>
-MAINNET_PROVIDER=<BLOCKCHAIN_PROVIDER_URL>
-USDC_ETH_POOL_ADDRESS="0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"
-NFT_POSITION_MANAGER="0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
-
+INFURA_KEY=<BLOCKCHAIN_PROVIDER_URL>
 ```
 Replace the BLOCKCHAIN_PROVIDER_URL with the one given by your provider. I recommend using [Infura](https://www.infura.io/) as setting up is super fast and you get 100'000 API calls per day which should be plenty.
 

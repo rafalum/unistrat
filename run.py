@@ -4,13 +4,13 @@ import pickle
 import argparse
 from PySide6.QtWidgets import QApplication
 
+from src.config import UNISWAP_POOL
 from src.collect_events import collect_events
-from src.utils import get_contract, get_provider, check_data_exists
+from src.utils import get_contract, check_data_exists
 
 from src.gui import MainWindow
 from src.strategy import Strategy
 from src.provider import Provider
-from src.position import Position
 from src.protocol_state import ProtocolState
 from src.position_manager import PositionManager
 
@@ -69,7 +69,7 @@ def main():
 
         if not data_exists:
             print("Collecting data...")
-            collect_events(get_contract("USDC_ETH_POOL"), int(args.from_block), int(args.to_block))
+            collect_events(get_contract("USDC_ETH_POOL", UNISWAP_POOL), int(args.from_block), int(args.to_block))
     else:
         print("Running in normal mode")
     

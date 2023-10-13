@@ -15,9 +15,9 @@ def get_env_variable(var_name):
 
 def get_provider(test=False):
     if test:
-        provider_url = get_env_variable("LOCAL_PROVIDER")
+        provider_url = get_env_variable("http://127.0.0.1:8545")
     else:
-        provider_url = get_env_variable("MAINNET_PROVIDER")
+        provider_url = get_env_variable("INFURA_KEY")
 
     return Web3(Web3.HTTPProvider(provider_url))
 
@@ -29,11 +29,8 @@ def get_account(test=False):
 
     return get_provider(test=test).eth.account.from_key(pk)
 
-def get_contract(name, address=None, test=False):
+def get_contract(name, address, test=False):
     w3 = get_provider(test=test)
-
-    if address is None:
-        address = get_env_variable(name)
 
     return w3.eth.contract(address=address, abi=load_abi(name))
 
