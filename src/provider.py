@@ -1,3 +1,4 @@
+import os
 import time
 import logging
 import numpy as np
@@ -43,6 +44,7 @@ class Provider:
 
         self.logger = logging.getLogger('logger3')
         self.logger.setLevel(logging.INFO)
+        os.makedirs(os.path.dirname('src/logs/provider.log'), exist_ok=True)
         handler = logging.FileHandler('src/logs/provider.log')
         formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
         handler.setFormatter(formatter)
