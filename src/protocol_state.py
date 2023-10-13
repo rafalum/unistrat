@@ -1,3 +1,4 @@
+import os
 import time
 import logging
 import threading
@@ -35,6 +36,7 @@ class ProtocolState:
 
         self.logger = logging.getLogger('logger2')
         self.logger.setLevel(logging.INFO)
+        os.makedirs(os.path.dirname('src/logs/state.log'), exist_ok=True)
         handler = logging.FileHandler('src/logs/state.log')
         formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
         handler.setFormatter(formatter)

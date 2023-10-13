@@ -1,3 +1,4 @@
+import os
 import math
 import logging
 
@@ -24,6 +25,7 @@ class PositionManager:
 
         self.logger = logging.getLogger('logger1')
         self.logger.setLevel(logging.INFO)
+        os.makedirs(os.path.dirname('src/logs/position.log'), exist_ok=True)
         handler = logging.FileHandler('src/logs/position.log')
         formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
         handler.setFormatter(formatter)
