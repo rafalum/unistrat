@@ -14,7 +14,7 @@ class TestUtil():
                 0,
                 0
             )).build_transaction({
-                'from': self.account.address,
+                'from': account.address,
                 'gas': 500000,
                 'nonce': self.w3.eth.get_transaction_count(account.address),
                 'value': swap_token_amount if eth else 0
@@ -36,6 +36,24 @@ class TestUtil():
         txn_hash, _ = self._sign_and_broadcast_transaction(wrap_token_tx, account)
 
         return
+    
+    def _approve_token(self, address, account, amount, token0) -> None:
+
+        contract = self.token0_contract if token0 else self.token1_contract
+
+        approved_balance = contract.functions.allowance(account.address, address).call()
+        # check if amount already approved
+        if approved_balance < amount:
+
+            approve_token_tx = contract.functions.approve(address, int(amount - approved_balance)).build_transaction({
+                'from': account.address,
+                'gas': 100000,
+                'nonce': self.w3.eth.get_transaction_count(account.address)
+            })
+
+            txn_hash, _ = self._sign_and_broadcast_transaction(approve_token_tx, account)
+        
+        return 
     
     def _sign_and_broadcast_transaction(self, transaction, account):
         # Sign the transaction
