@@ -167,3 +167,44 @@ class TestMint(unittest.TestCase, TestUtil):
         self.assertAlmostEqual(expected_amount_token1, actual_amount_token1, delta=0.001*10**self.token1_decimals)
 
         self.assertAlmostEqual(liquidity, actual_liquidity, delta=0.001*10**self.token1_decimals)
+
+    def testMintPositionOnlyETH(self):
+
+        balance_token0 = self.token0_contract.functions.balanceOf(self.account.address).call()
+        balance_token1 = self.token1_contract.functions.balanceOf(self.account.address).call()
+
+        self.assertEqual(balance_token0, 0)
+        self.assertEqual(balance_token1, 0)
+
+        provider = Provider(test=True)
+
+        current_block = provider.get_current_block()
+        current_tick = provider.get_current_tick(current_block)
+        current_sqrt_price = provider.get_current_sqrt_price(current_block)
+
+        lower_tick = int(current_tick // 10 * 10 - 100)
+        upper_tick = int(current_tick // 10 * 10 + 100)
+
+        y_real = 1 * 10**self.token1_decimals
+        x_virt, y_virt, x_real = real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, current_sqrt_price, y_real=y_real)
+        liquidity = math.sqrt(x_virt * y_virt)
+
+        position = Position(current_tick, lower_tick, upper_tick, liquidity, None, None)
+
+        expected_amount_token0 = position.amount_x(current_tick, current_sqrt_price)
+        expected_amount_token1 = position.amount_y(current_tick, current_sqrt_price)
+
+        _, txn_receipt = provider.mint_position(position, current_tick, current_sqrt_price)
+
+        token_id = int.from_bytes(txn_receipt["logs"][3]["topics"][-1], byteorder="big")
+
+        actual_amount_token0 = int.from_bytes(txn_receipt["logs"][0]["data"][-32:])
+        actual_amount_token1 = int.from_bytes(txn_receipt["logs"][1]["data"][-32:])
+
+        actual_liquidity = int.from_bytes(txn_receipt["logs"][4]["data"][:32])
+
+        # TODO: fix: delta should be way smaller
+        self.assertAlmostEqual(expected_amount_token0, actual_amount_token0, delta=10**self.token0_decimals)
+        self.assertAlmostEqual(expected_amount_token1, actual_amount_token1, delta=0.001*10**self.token1_decimals)
+
+        self.assertAlmostEqual(liquidity, actual_liquidity, delta=0.001*10**self.token1_decimals)

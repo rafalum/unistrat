@@ -5,7 +5,7 @@ import numpy as np
 from typing import Tuple, List, Union
 
 from .position import Position
-from .config import UNISWAP_POOL, UNISWAP_ROUTER, NFT_POSITION_MANAGER
+from .config import UNISWAP_POOL, UNISWAP_ROUTER, NFT_POSITION_MANAGER, WETH
 from .utils import get_contract, get_provider, get_account, check_enough_balance, tick_to_price
 
 BLOCK_INDEX = 0
@@ -25,6 +25,9 @@ class Provider:
         self.token0_address = self.pool_contract.functions.token0().call()
         self.token1_address = self.pool_contract.functions.token1().call()
         self.fee = self.pool_contract.functions.fee().call()
+
+        self.token0_is_WETH = self.token0_address == WETH
+        self.token1_is_WETH = self.token1_address == WETH
 
         self.token0_contract = get_contract("token0", self.token0_address, test=test)
         self.token1_contract = get_contract("token1", self.token1_address,test=test)
@@ -175,6 +178,19 @@ class Provider:
         txn_hash, _ = self.sign_and_broadcast_transaction(swap_token_tx)
         
         return 
+    
+    def wrap_token(self, token_contract, amount) -> None:
+
+        wrap_token_tx = token_contract.functions.deposit().build_transaction({
+            'from': self.account.address,
+            'gas': 500000,
+            'nonce': self.provider.eth.get_transaction_count(self.account.address),
+            'value': amount
+        })
+
+        txn_hash, _ = self.sign_and_broadcast_transaction(wrap_token_tx)
+
+        return
 
     
     def mint_position(self, position: Position, current_tick, current_sqrt_price) -> Tuple:
@@ -188,8 +204,14 @@ class Provider:
         balance_token0 = self.token0_contract.functions.balanceOf(self.account.address).call()
         balance_token1 = self.token1_contract.functions.balanceOf(self.account.address).call()
 
+        balance_token0 = balance_token0 + self.provider.eth.get_balance(self.account.address) if self.token0_is_WETH else balance_token0
+        balance_token1 = balance_token1 + self.provider.eth.get_balance(self.account.address) if self.token1_is_WETH else balance_token1
+
         self.logger.info(f"Balance token0: {balance_token0}")
         self.logger.info(f"Balance token1: {balance_token1}")
+
+        self.logger.info(self.token0_is_WETH)
+        self.logger.info(self.token1_is_WETH)
 
         eth_balance = self.provider.eth.get_balance(self.account.address)
 
@@ -205,7 +227,9 @@ class Provider:
             swap_token1_amount = (amount_token0 - balance_token0) * tick_to_price(current_tick)
             swap_token1_amount = int(swap_token1_amount * 1.01) 
 
-            self.swap_token(self.token1_address, self.token0_address, swap_token1_amount, True)
+            if not self.token1_is_WETH:
+                self.approve_token(self.router_contract.address, swap_token1_amount, self.token1_contract)
+            self.swap_token(self.token1_address, self.token0_address, swap_token1_amount, self.token1_is_WETH)
 
         elif balance_token1 < amount_token1:
             self.logger.info("Not enough balance of token1 -> swapping token0 to token1")
@@ -213,8 +237,25 @@ class Provider:
             swap_token0_amount = int(swap_token0_amount * 1.01)
 
             # swapping ERC20 tokens -> approve router contract to spend tokens
-            self.approve_token(self.router_contract.address, swap_token0_amount, self.token0_contract)
-            self.swap_token(self.token0_address, self.token1_address, swap_token0_amount, False)
+            if not self.token0_is_WETH:
+                self.approve_token(self.router_contract.address, swap_token0_amount, self.token0_contract)
+            self.swap_token(self.token0_address, self.token1_address, swap_token0_amount, self.token0_is_WETH)
+
+        if self.token0_is_WETH or self.token1_is_WETH:
+            if self.token0_is_WETH:
+                self.logger.info("Not enough WETH: Wrapping token0")
+
+                balance_token0 = self.token0_contract.functions.balanceOf(self.account.address).call()
+                amount_to_wrap = amount_token0 - balance_token0
+
+                self.wrap_token(self.token0_contract, amount_to_wrap)
+            elif self.token1_is_WETH:
+                self.logger.info("Not enough WETH: Wrapping token1")
+
+                balance_token1 = self.token1_contract.functions.balanceOf(self.account.address).call()
+                amount_to_wrap = amount_token1 - balance_token1
+
+                self.wrap_token(self.token1_contract, amount_to_wrap)
         
         # approve token0 and token1 to be spent by nft manager contract
         self.approve_token(self.nft_contract.address, amount_token0, self.token0_contract)
