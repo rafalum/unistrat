@@ -11,9 +11,11 @@ from src.utils import get_contract, get_account, get_provider, get_env_variable,
 from src.position import Position
 from src.provider import Provider
 
+from test.utils import TestUtil
+
 WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
 
-class TestMint(unittest.TestCase):
+class TestMint(unittest.TestCase, TestUtil):
 
     def setUp(self):
 
@@ -71,9 +73,9 @@ class TestMint(unittest.TestCase):
         self.assertEqual(balance_token1, 0)
 
         if self.token0_address == WETH_ADDRESS:
-            self._wrap_token(self.token0_contract, 100 * 10**18)
+            self._wrap_token(self.token0_contract, 100 * 10**18, self.account)
         else:
-            self._swap(WETH_ADDRESS, self.token0_address, 100 * 10**18, True)
+            self._swap(WETH_ADDRESS, self.token0_address, 100 * 10**18, True, self.account)
 
         balance_token0 = self.token0_contract.functions.balanceOf(self.account.address).call()
         balance_token1 = self.token1_contract.functions.balanceOf(self.account.address).call()
@@ -123,9 +125,9 @@ class TestMint(unittest.TestCase):
         self.assertEqual(balance_token1, 0)
 
         if self.token1_address == WETH_ADDRESS:
-            self._wrap_token(self.token1_contract, 100 * 10**18)
+            self._wrap_token(self.token1_contract, 100 * 10**18, self.account)
         else:
-            self._swap(WETH_ADDRESS, self.token1_address, 100 * 10**18, True)
+            self._swap(WETH_ADDRESS, self.token1_address, 100 * 10**18, True, self.account)
 
         balance_token0 = self.token0_contract.functions.balanceOf(self.account.address).call()
         balance_token1 = self.token1_contract.functions.balanceOf(self.account.address).call()
@@ -165,51 +167,3 @@ class TestMint(unittest.TestCase):
         self.assertAlmostEqual(expected_amount_token1, actual_amount_token1, delta=0.001*10**self.token1_decimals)
 
         self.assertAlmostEqual(liquidity, actual_liquidity, delta=0.001*10**self.token1_decimals)
-
-
-    def _swap(self, token_in, token_out, swap_token_amount, eth) -> None:
-
-        swap_token_tx = self.router_contract.functions.exactInputSingle((
-                token_in,
-                token_out,
-                self.fee,
-                self.account.address,
-                int(time.time()) + 10 * 60,
-                int(swap_token_amount),
-                0,
-                0
-            )).build_transaction({
-                'from': self.account.address,
-                'gas': 500000,
-                'nonce': self.w3.eth.get_transaction_count(self.account.address),
-                'value': swap_token_amount if eth else 0
-            })
-
-        txn_hash, _ = self._sign_and_broadcast_transaction(swap_token_tx)
-        
-        return
-    
-    def _wrap_token(self, token_contract, amount) -> None:
-
-        wrap_token_tx = token_contract.functions.deposit().build_transaction({
-            'from': self.account.address,
-            'gas': 500000,
-            'nonce': self.w3.eth.get_transaction_count(self.account.address),
-            'value': amount
-        })
-
-        txn_hash, _ = self._sign_and_broadcast_transaction(wrap_token_tx)
-
-        return
-    
-    def _sign_and_broadcast_transaction(self, transaction):
-        # Sign the transaction
-        signed_txn = self.w3.eth.account.sign_transaction(transaction, self.account.key)
-
-        # Send the transaction
-        txn_hash = self.w3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
-        # Wait for the transaction to be mined
-        txn_receipt = self.w3.eth.wait_for_transaction_receipt(txn_hash)
-
-        return txn_hash, txn_receipt
