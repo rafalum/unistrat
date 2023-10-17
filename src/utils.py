@@ -86,27 +86,26 @@ def check_enough_balance(current_tick, balance_token0, balance_token1, amount_to
 
 def real_reservers_to_virtal_reserves(lower_tick, upper_tick, current_tick, current_sqrt_price, x_real=None, y_real=None):
 
-    lower_sqrtPrice = tick_to_sqrt_price(lower_tick)
-    current_sqrtPrice = current_sqrt_price
-    upper_sqrtPrice = tick_to_sqrt_price(upper_tick)
+    lower_sqrt_price = int(tick_to_sqrt_price(lower_tick) * 2**96)
+    upper_sqrt_price = int(tick_to_sqrt_price(upper_tick) * 2**96)
 
     if y_real:
 
-        liquidity = (1 / (current_sqrtPrice - lower_sqrtPrice)) * y_real
+        liquidity = (y_real * 2**96 / (current_sqrt_price - lower_sqrt_price))
 
-        real = ((upper_sqrtPrice - current_sqrtPrice) / (upper_sqrtPrice * current_sqrtPrice)) * liquidity # x_real
+        real = ((upper_sqrt_price - current_sqrt_price) / (upper_sqrt_price * current_sqrt_price)) * liquidity * 2**96 # x_real
         
     elif x_real:
 
-        liquidity = (1 / (1 / current_sqrtPrice - 1 / upper_sqrtPrice)) * x_real
+        liquidity = ((current_sqrt_price * upper_sqrt_price) / (upper_sqrt_price - current_sqrt_price)) * x_real / 2**96
 
-        real = (current_sqrtPrice - lower_sqrtPrice) * liquidity # y_real
+        real = (current_sqrt_price - lower_sqrt_price) * liquidity / 2**96 # y_real
 
     else:
         return None, None
 
-    x_virt = liquidity / current_sqrtPrice
-    y_virt = liquidity * current_sqrtPrice
+    x_virt = (liquidity / current_sqrt_price) * 2**96
+    y_virt = (liquidity * current_sqrt_price) / 2**96
 
     return x_virt, y_virt, real
 

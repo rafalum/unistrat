@@ -29,37 +29,37 @@ class Position:
     
     def amount_x(self, current_tick, current_sqrt_price=None):
 
-        price_lower_tick = tick_to_sqrt_price(self.lower_tick)
-        price_upper_tick = tick_to_sqrt_price(self.upper_tick)
+        price_lower_tick = int(tick_to_sqrt_price(self.lower_tick) * 2**96)
+        price_upper_tick = int(tick_to_sqrt_price(self.upper_tick) * 2**96)
 
         # if the exact sqrt price is given, use it
         if current_sqrt_price:
             price_current_tick = current_sqrt_price
         else:
-            price_current_tick = tick_to_sqrt_price(current_tick)
+            price_current_tick = int(tick_to_sqrt_price(current_tick) * 2**96)
 
 
         if current_tick < self.lower_tick:
-            value = 1 / price_lower_tick - 1 / price_upper_tick
+            value = (price_upper_tick - price_lower_tick) / (price_lower_tick * price_upper_tick)
 
         elif current_tick >= self.upper_tick:
             value = 0
         
         else:
-            value = 1 / price_current_tick - 1 / price_upper_tick
+            value = (price_upper_tick - price_current_tick) / (price_current_tick * price_upper_tick)
 
-        return self.liquidity * value
+        return self.liquidity * value * 2**96
     
     def amount_y(self, current_tick, current_sqrt_price=None):
 
-        price_lower_tick = tick_to_sqrt_price(self.lower_tick)
-        price_upper_tick = tick_to_sqrt_price(self.upper_tick)
+        price_lower_tick = int(tick_to_sqrt_price(self.lower_tick) * 2**96)
+        price_upper_tick = int(tick_to_sqrt_price(self.upper_tick) * 2**96)
 
         # if the exact sqrt price is given, use it
         if current_sqrt_price:
             price_current_tick = current_sqrt_price
         else:
-            price_current_tick = tick_to_sqrt_price(current_tick)
+            price_current_tick = int(tick_to_sqrt_price(current_tick) * 2**96)
 
         if current_tick < self.lower_tick:
             value = 0
@@ -70,7 +70,7 @@ class Position:
         else:
             value = price_current_tick - price_lower_tick
 
-        return self.liquidity * value
+        return self.liquidity * value / 2**96
 
     # 
     #

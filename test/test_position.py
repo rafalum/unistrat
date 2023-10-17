@@ -8,7 +8,7 @@ class TestPosition(unittest.TestCase):
 
     def setUp(self):
 
-        x_virt, y_virt, x_real = real_reservers_to_virtal_reserves(90000, 110000, 100000, tick_to_sqrt_price(100000), y_real=10**18)
+        x_virt, y_virt, x_real = real_reservers_to_virtal_reserves(90000, 110000, 100000, tick_to_sqrt_price(100000) * 2**96, y_real=10**18)
 
         self.x_real = x_real
         self.y_real = 10**18

@@ -76,7 +76,7 @@ class Provider:
     def get_current_sqrt_price(self, block) -> int:
 
         slot0 = self.pool_contract.functions.slot0().call(block_identifier=int(block))
-        return slot0[0] / 2**96
+        return slot0[0]
     
     def get_current_tick(self, block) -> int:
         
