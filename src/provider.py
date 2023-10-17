@@ -241,22 +241,24 @@ class Provider:
                 self.approve_token(self.router_contract.address, swap_token0_amount, self.token0_contract)
             self.swap_token(self.token0_address, self.token1_address, swap_token0_amount, self.token0_is_WETH)
 
+        # check if one of the tokens is WETH and wrap it if necessary
         if self.token0_is_WETH or self.token1_is_WETH:
             if self.token0_is_WETH:
-                self.logger.info("Not enough WETH: Wrapping token0")
-
                 balance_token0 = self.token0_contract.functions.balanceOf(self.account.address).call()
                 amount_to_wrap = amount_token0 - balance_token0
 
-                self.wrap_token(self.token0_contract, amount_to_wrap)
-            elif self.token1_is_WETH:
-                self.logger.info("Not enough WETH: Wrapping token1")
+                if amount_to_wrap > 0:
+                    self.logger.info("Not enough WETH: Wrapping token0")
+                    self.wrap_token(self.token0_contract, amount_to_wrap)
 
+            elif self.token1_is_WETH:
                 balance_token1 = self.token1_contract.functions.balanceOf(self.account.address).call()
                 amount_to_wrap = amount_token1 - balance_token1
 
-                self.wrap_token(self.token1_contract, amount_to_wrap)
-        
+                if amount_to_wrap > 0:
+                    self.logger.info("Not enough WETH: Wrapping token1")
+                    self.wrap_token(self.token1_contract, amount_to_wrap)
+            
         # approve token0 and token1 to be spent by nft manager contract
         self.approve_token(self.nft_contract.address, amount_token0, self.token0_contract)
         self.approve_token(self.nft_contract.address, amount_token1, self.token1_contract)
