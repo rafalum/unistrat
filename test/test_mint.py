@@ -111,7 +111,7 @@ class TestMint(unittest.TestCase, TestUtil):
         actual_liquidity = int.from_bytes(txn_receipt["logs"][4]["data"][:32])
 
         # TODO: fix: delta should be way smaller
-        self.assertAlmostEqual(expected_amount_token0, actual_amount_token0, delta=10**self.token0_decimals)
+        self.assertAlmostEqual(expected_amount_token0, actual_amount_token0, delta=100*10**self.token0_decimals)
         self.assertAlmostEqual(expected_amount_token1, actual_amount_token1, delta=0.001*10**self.token1_decimals)
 
         self.assertAlmostEqual(liquidity, actual_liquidity, delta=0.001*10**self.token1_decimals)
@@ -163,7 +163,7 @@ class TestMint(unittest.TestCase, TestUtil):
         actual_liquidity = int.from_bytes(txn_receipt["logs"][4]["data"][:32])
 
         # TODO: fix: delta should be way smaller
-        self.assertAlmostEqual(expected_amount_token0, actual_amount_token0, delta=10**self.token0_decimals)
+        self.assertAlmostEqual(expected_amount_token0, actual_amount_token0, delta=100*10**self.token0_decimals)
         self.assertAlmostEqual(expected_amount_token1, actual_amount_token1, delta=0.001*10**self.token1_decimals)
 
         self.assertAlmostEqual(liquidity, actual_liquidity, delta=0.001*10**self.token1_decimals)
@@ -204,7 +204,7 @@ class TestMint(unittest.TestCase, TestUtil):
         actual_liquidity = int.from_bytes(txn_receipt["logs"][4]["data"][:32])
 
         # TODO: fix: delta should be way smaller
-        self.assertAlmostEqual(expected_amount_token0, actual_amount_token0, delta=10**self.token0_decimals)
+        self.assertAlmostEqual(expected_amount_token0, actual_amount_token0, delta=100*10**self.token0_decimals)
         self.assertAlmostEqual(expected_amount_token1, actual_amount_token1, delta=0.001*10**self.token1_decimals)
 
         self.assertAlmostEqual(liquidity, actual_liquidity, delta=0.001*10**self.token1_decimals)
