@@ -57,7 +57,7 @@ def check_data_exists(from_block, to_block, pool_address):
         burn_data_exists = os.path.isfile(f"data/{pool_address}/Burn.csv")
     
         if swap_data_exists and mint_data_exists and burn_data_exists:
-            swap_data = np.loadtxt("data/Swap.csv", delimiter=",", dtype=float)
+            swap_data = np.loadtxt(f"data/{pool_address}/Swap.csv", delimiter=",", dtype=float)
             if swap_data[-1, 0] + 20 >= to_block and swap_data[0, 0] - 20 <= from_block:
                 return True
         else:

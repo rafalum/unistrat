@@ -85,7 +85,7 @@ def main():
     else:
         print("Running in normal mode")
     
-    provider = Provider(args.pool_address, args.network, sim=args.simulate, backtest=args.backtest, swap_data="data/Swap.csv", mint_data="data/Mint.csv", burn_data="data/Burn.csv")
+    provider = Provider(args.pool_address, args.network, sim=args.simulate, backtest=args.backtest, swap_data=f"data/{args.pool_address}/Swap.csv", mint_data=f"data/{args.pool_address}/Mint.csv", burn_data=f"data/{args.pool_address}/Burn.csv")
     state = ProtocolState(provider)
     position_manager = PositionManager(provider, state)
     strategy = Strategy(provider, state, position_manager)
