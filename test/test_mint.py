@@ -19,7 +19,7 @@ class TestMint(unittest.TestCase, TestUtil):
 
     def setUp(self):
 
-        API_KEY = get_env_variable("INFURA_KEY")
+        API_KEY = get_env_variable("PROVIDER_URL")
             
         # spin up Ethereum node
         self.node_process = subprocess.Popen(["npx", "hardhat", "node", "--fork", API_KEY])
@@ -83,7 +83,7 @@ class TestMint(unittest.TestCase, TestUtil):
         self.assertEqual(balance_token1, 0)
         self.assertGreater(balance_token0, 0)
 
-        provider = Provider(test=True)
+        provider = Provider(pool_address="0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640", network="mainnet", local=True)
 
         current_block = provider.get_current_block()
         current_tick = provider.get_current_tick(current_block)
@@ -135,7 +135,7 @@ class TestMint(unittest.TestCase, TestUtil):
         self.assertEqual(balance_token0, 0)
         self.assertGreater(balance_token1, 0)
 
-        provider = Provider(test=True)
+        provider = Provider(pool_address="0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640", network="mainnet", local=True)
 
         current_block = provider.get_current_block()
         current_tick = provider.get_current_tick(current_block)
@@ -176,7 +176,7 @@ class TestMint(unittest.TestCase, TestUtil):
         self.assertEqual(balance_token0, 0)
         self.assertEqual(balance_token1, 0)
 
-        provider = Provider(test=True)
+        provider = Provider(pool_address="0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640", network="mainnet", local=True)
 
         current_block = provider.get_current_block()
         current_tick = provider.get_current_tick(current_block)
