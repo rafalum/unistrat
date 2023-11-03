@@ -58,5 +58,4 @@ All the code lives in `src/` and contains the following components:
 
 ### Limitations
 
-- currently only works for the [USDC-ETH pool](https://etherscan.io/address/0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640#events)
-- no unit tests
+- no extensive unit tests
