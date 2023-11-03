@@ -13,12 +13,21 @@ from .protocol_state import ProtocolState
 from .position_manager import PositionManager
 
 class MainWindow(QMainWindow):
-    def __init__(self, state, position_manager, backtest=False):
+    def __init__(self, provider, state, position_manager, backtest=False):
         super().__init__()
 
+        self.provider = provider
         self.state = state
         self.position_manager = position_manager
         self.backtest = backtest
+
+        self.token0_symbol = self.provider.token0_symbol
+        self.token1_symbol = self.provider.token1_symbol
+
+        self.token0_decimals = self.provider.token0_decimals
+        self.token1_decimals = self.provider.token1_decimals
+
+        self.tick_spacing = self.provider.tick_spacing
 
         self.previous_block = None
         self.previous_tick = None
@@ -68,13 +77,13 @@ class MainWindow(QMainWindow):
         # Positions table
         self.open_positions_table = QTableWidget()
         self.open_positions_table.setColumnCount(5)
-        self.open_positions_table.setHorizontalHeaderLabels(["ID", "USDC", "ETH", "Value in ETH", "IL"])
+        self.open_positions_table.setHorizontalHeaderLabels([f"ID", self.token0_symbol, self.token1_symbol, f"Value in {self.token1_symbol}", "IL"])
         self.open_positions_table.setMaximumWidth(600)
         self.open_positions_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
         self.closed_positions_table = QTableWidget()
         self.closed_positions_table.setColumnCount(4)
-        self.closed_positions_table.setHorizontalHeaderLabels(["ID", "Fees in ETH", "Value in ETH", "P/L"])
+        self.closed_positions_table.setHorizontalHeaderLabels(["ID", f"Fees in {self.token1_symbol}", f"Value in {self.token1_symbol}", "P/L"])
         self.closed_positions_table.setMaximumWidth(600)
         self.closed_positions_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
@@ -220,13 +229,13 @@ class MainWindow(QMainWindow):
             lower_tick = position.lower_tick
             upper_tick = position.upper_tick
 
-            value_hold = position.value_hold(current_tick) / 10**18
-            value_position = position.value_position(current_tick) / 10**18
+            value_hold = position.value_hold(current_tick) / 10**self.token1_decimals
+            value_position = position.value_position(current_tick) / 10**self.token1_decimals
 
             diff = value_position - value_hold
 
-            amount_x = position.amount_x(current_tick) / 10**6
-            amount_y = position.amount_y(current_tick) / 10**18
+            amount_x = position.amount_x(current_tick) / 10**self.token0_decimals
+            amount_y = position.amount_y(current_tick) / 10**self.token1_decimals
 
             self.lower_tick_line.replace([QPointF(meta_data["block"], lower_tick), QPointF(current_block, lower_tick)])
             self.upper_tick_line.replace([QPointF(meta_data["block"], upper_tick), QPointF(current_block, upper_tick)])
@@ -263,13 +272,13 @@ class MainWindow(QMainWindow):
             position = self.position_manager.positions[index]
             performance = self.position_manager.performance[index]
 
-            value_position = performance["value_position"] / 10**18
-            value_hold = performance["value_hold"] / 10**18
+            value_position = performance["value_position"] / 10**self.token1_decimals
+            value_hold = performance["value_hold"] / 10**self.token1_decimals
 
             accumulated_fees = performance["accumulated_fees"]
 
-            accumulated_fees_0 = accumulated_fees[0] / 10**18
-            accumulated_fees_1 = accumulated_fees[1] / 10**18
+            accumulated_fees_0 = accumulated_fees[0] / 10**self.token1_decimals
+            accumulated_fees_1 = accumulated_fees[1] / 10**self.token1_decimals
 
             fees_total = accumulated_fees_0 + accumulated_fees_1
             
@@ -296,9 +305,9 @@ class MainWindow(QMainWindow):
             self.closed_positions_table.setItem(row_position, 3, performance_item)
 
         # Get value locked in the ticks around the current tick
-        value_in_ticks, ticks = get_value_locked_for_tick_range(current_tick, liquidity, tick_states)
+        value_in_ticks, ticks = get_value_locked_for_tick_range(current_tick, liquidity, tick_states, tick_spacing=self.tick_spacing, token_decimals=self.token1_decimals)
         if ticks != []:
-            tick_categories = [str(int(t // 10 * 10)) for t in ticks[::-1]]
+            tick_categories = [str(int(t // self.tick_spacing * self.tick_spacing)) for t in ticks[::-1]]
             tick_heights = value_in_ticks[::-1]
 
             # Update tick_bar_set
@@ -315,7 +324,7 @@ class MainWindow(QMainWindow):
             tick_axis_y.setLabelsAngle(270)
 
         # Get the volumes in the last 12 blocks
-        volume_data, interval_data = get_volume_in_last_blocks(self.state.swap_data, number_volume=300//12)
+        volume_data, interval_data = get_volume_in_last_blocks(self.state.swap_data, token_decimals=self.token1_decimals, number_volume=300//12)
         volume_categories = [str(x) for x, y in interval_data[::-1]]
         volume_heights = volume_data[::-1]
 

@@ -45,12 +45,16 @@ class ProtocolState:
 
     def _collect(self):
 
+        next_block = None
+        self.current_block = self.provider.get_current_block()
+
         while self.collect:
             
             # restrict state size
             swap_state_size = len(self.swap_data)
             mint_state_size = len(self.mint_data)
             burn_state_size = len(self.burn_data)
+
             if swap_state_size > self.max_state_size:
                 self.swap_data = self.swap_data[swap_state_size-self.max_state_size:]
             if mint_state_size > self.max_state_size:
@@ -60,40 +64,43 @@ class ProtocolState:
             
 
             # get the current block
-            next_block = self.provider.get_current_block()
-
-            if self.current_block == next_block:
-                if not self.provider.backtest:
-                    time.sleep(5)
-                continue
-
-            self.current_block = next_block
-            self.logger.info(f"#### Current block: {self.current_block} ####")
+            while True:
+                next_block = self.provider.get_current_block()
+                if next_block != self.current_block:
+                    break
+                else:
+                    time.sleep(12)
 
             # Swap events
-            swap_events = self.provider.get_events(self.current_block, "Swap")
+            swap_events = self.provider.get_events(self.current_block, next_block, "Swap")
             self.swap_data += swap_events
 
-            # state currently empty -> wait for first event
-            if len(self.swap_data) == 0:
-                time.sleep(5)
-                continue
-
             # Mint events
-            mint_events = self.provider.get_events(self.current_block, "Mint")
+            mint_events = self.provider.get_events(self.current_block, next_block, "Mint")
             self.mint_data += mint_events
 
             # Burn events
-            burn_events = self.provider.get_events(self.current_block, "Burn")
+            burn_events = self.provider.get_events(self.current_block, next_block, "Burn")
             self.burn_data += burn_events
 
+
             # Just for logging
-            for swap_event in swap_events:
-                self.logger.info(f"#### Swap event: {swap_event[1]} ####")
-            for mint_event in mint_events:
-                self.logger.info(f"#### Mint event: {mint_event[1]} - {mint_event[2]} ####")
-            for burn_event in burn_events:
-                self.logger.info(f"#### Burn event: {burn_event[1]} - {burn_event[2]} ####")
+            for i in range(self.current_block, next_block):
+                self.current_block = next_block
+                self.logger.info(f"#### Block: {i} ####")
+
+                for swap_event in swap_events:
+                    if swap_event[self.BLOCK_INDEX] == i:
+                        self.logger.info(f"#### Swap event: {swap_event[1]} ####")
+                for mint_event in mint_events:
+                    if mint_event[self.BLOCK_INDEX] == i:
+                        self.logger.info(f"#### Mint event: {mint_event[1]} - {mint_event[2]} ####")
+                for burn_event in burn_events:
+                    if burn_event[self.BLOCK_INDEX] == i:
+                        self.logger.info(f"#### Burn event: {burn_event[1]} - {burn_event[2]} ####")
+
+            if swap_events == []:
+                continue
 
             new_burn_or_mint = burn_events != [] or mint_events != []
             
@@ -107,22 +114,22 @@ class ProtocolState:
 
             self.current_tick = self.swap_data[-1][1]
 
-            if not self.provider.backtest:
-                time.sleep(12)
-            else:
+            if self.provider.backtest:
                 time.sleep(0.2)
+            else:
+                time.sleep(1)
 
     def _get_tick_states(self, current_tick, block_number, get_all=False, tick_range=100) -> None:
 
-        tick_below = int(current_tick // 10 * 10)
+        tick_below = int(current_tick // self.provider.tick_spacing * self.provider.tick_spacing)
 
         if get_all or self.tick_states == {}:
             self.tick_states = {}
-            for tick in range(tick_below - tick_range, tick_below + tick_range + 10, 10):
+            for tick in range(tick_below - tick_range, tick_below + tick_range + self.provider.tick_spacing, self.provider.tick_spacing):
                 tick_state = self.provider.get_tick_state(tick, block_number)
                 self.tick_states[tick] = tick_state
         else:
-            for tick in range(tick_below - tick_range, tick_below + tick_range + 10, 10):
+            for tick in range(tick_below - tick_range, tick_below + tick_range + self.provider.tick_spacing, self.provider.tick_spacing):
                 if tick not in self.tick_states:
                     tick_state = self.provider.get_tick_state(tick, block_number)
                     self.tick_states[tick] = tick_state

@@ -5,34 +5,44 @@ import numpy as np
 from typing import Tuple, List, Union
 
 from .position import Position
-from .config import UNISWAP_POOL, UNISWAP_ROUTER, NFT_POSITION_MANAGER, WETH
+from .config import addresses
 from .utils import get_contract, get_provider, get_account, check_enough_balance, tick_to_price
 
 BLOCK_INDEX = 0
 
 class Provider:
-    def __init__(self, sim=False, backtest=False, swap_data=None, mint_data=None, burn_data=None, test=False):
+    def __init__(self, pool_address, network, sim=False, backtest=False, swap_data=None, mint_data=None, burn_data=None, local=False):
 
         if backtest and not swap_data:
             raise ValueError("Backtest set to true -> please specify data file")
 
-        self.provider = get_provider(test=test)
+        self.provider = get_provider(test=local)
 
-        self.pool_contract = get_contract("USDC_ETH_POOL", UNISWAP_POOL, test=test)
-        self.router_contract = get_contract("UNISWAP_ROUTER", UNISWAP_ROUTER, test=test)
-        self.nft_contract = get_contract("NFT_POSITION_MANAGER", NFT_POSITION_MANAGER, test=test)
+        self.pool_contract = get_contract("POOL", pool_address, test=local)
+        self.router_contract = get_contract("UNISWAP_ROUTER", addresses[network]["UNISWAP_ROUTER"], test=local)
+        self.nft_contract = get_contract("NFT_POSITION_MANAGER", addresses[network]["NFT_POSITION_MANAGER"], test=local)
+
+        self.fee = self.pool_contract.functions.fee().call()
+        self.tick_spacing = self.pool_contract.functions.tickSpacing().call()
 
         self.token0_address = self.pool_contract.functions.token0().call()
         self.token1_address = self.pool_contract.functions.token1().call()
-        self.fee = self.pool_contract.functions.fee().call()
 
-        self.token0_is_WETH = self.token0_address == WETH
-        self.token1_is_WETH = self.token1_address == WETH
+        self.token0_contract = get_contract("token0", self.token0_address, test=local)
+        self.token1_contract = get_contract("token1", self.token1_address,test=local)
 
-        self.token0_contract = get_contract("token0", self.token0_address, test=test)
-        self.token1_contract = get_contract("token1", self.token1_address,test=test)
+        self.token0_symbol = self.token0_contract.functions.symbol().call()
+        self.token1_symbol = self.token1_contract.functions.symbol().call()
 
-        self.account = get_account(test=test)
+        self.token0_decimals = self.token0_contract.functions.decimals().call()
+        self.token1_decimals = self.token1_contract.functions.decimals().call()
+
+        self.weth = addresses[network]["WETH"]
+
+        self.token0_is_WETH = self.token0_address == self.weth
+        self.token1_is_WETH = self.token1_address == self.weth
+
+        self.account = get_account(test=local)
 
         self.sim = sim
         self.backtest = backtest
@@ -52,6 +62,9 @@ class Provider:
         formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
+
+        self.logger.info(f"Token0: {self.token0_symbol}")
+        self.logger.info(f"Token1: {self.token1_symbol}")
   
     
     def get_tick_state(self, tick, block_number) -> List[Union[int, bool]]:
@@ -86,21 +99,21 @@ class Provider:
         slot0 = self.pool_contract.functions.slot0().call(block_identifier=int(block))
         return slot0[1]
         
-    def get_events(self, block_number, type):
+    def get_events(self, last_block, current_block, type):
 
         if self.backtest:
             if type == "Swap":
-                swap_events = self.swap_data[self.swap_data[:, BLOCK_INDEX] == block_number]
+                swap_events = self.swap_data[self.swap_data[:, BLOCK_INDEX] == current_block]
                 event_data = swap_events.tolist()
             elif type == "Mint":
-                mint_events = self.mint_data[self.mint_data[:, BLOCK_INDEX] == block_number]
+                mint_events = self.mint_data[self.mint_data[:, BLOCK_INDEX] == current_block]
                 event_data = mint_events.tolist()
             elif type == "Burn":
-                burn_events = self.burn_data[self.burn_data[:, BLOCK_INDEX] == block_number]
+                burn_events = self.burn_data[self.burn_data[:, BLOCK_INDEX] == current_block]
                 event_data = burn_events.tolist()
 
         else:
-            event_filter = self.pool_contract.events[type].create_filter(fromBlock=block_number, toBlock=block_number+1)
+            event_filter = self.pool_contract.events[type].create_filter(fromBlock=last_block, toBlock=current_block+1)
             events = event_filter.get_all_entries()
             
             event_data = []
