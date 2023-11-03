@@ -17,7 +17,7 @@ def get_provider(test=False):
     if test:
         provider_url = get_env_variable("http://127.0.0.1:8545")
     else:
-        provider_url = get_env_variable("INFURA_KEY")
+        provider_url = get_env_variable("PROVIDER_URL")
 
     return Web3(Web3.HTTPProvider(provider_url))
 
@@ -150,7 +150,7 @@ def get_fee_growth_inside_last(lower_tick_state, upper_tick_state, lower_tick, u
 
     return fee_growth_inside_0_last, fee_growth_inside_1_last
 
-def get_volume_in_last_blocks(swap_data, block_interval_size=12, number_volume=64):
+def get_volume_in_last_blocks(swap_data, token_decimals, block_interval_size=12, number_volume=64):
 
     swap_data_np = np.stack(swap_data, axis=0)
 
@@ -167,7 +167,7 @@ def get_volume_in_last_blocks(swap_data, block_interval_size=12, number_volume=6
         swap_data_last_interval = swap_data_np[(swap_data_np[:, 0] >= interval_lower_bound) & (swap_data_np[:, 0] < interval_upper_bound)]
 
         # Sum all swap volumes of y
-        volume.append(np.sum(np.abs(swap_data_last_interval[:, 5])) / 10**18)
+        volume.append(np.sum(np.abs(swap_data_last_interval[:, 5])) / 10**token_decimals)
 
         block_interval.append((interval_lower_bound, interval_upper_bound))
 
@@ -175,23 +175,23 @@ def get_volume_in_last_blocks(swap_data, block_interval_size=12, number_volume=6
             
     return volume, block_interval
 
-def get_total_value_locked_in_tick(tick, liquidity):
+def get_total_value_locked_in_tick(tick, liquidity, token_decimals):
 
     x_real, y_real = total_value_in_tick(tick, tick_to_sqrt_price(tick), liquidity)
 
-    total_value_locked = x_real * tick_to_price(tick) / 10**18 + y_real / 10**18
+    total_value_locked = x_real * tick_to_price(tick) / 10**token_decimals + y_real / 10**token_decimals
 
     return total_value_locked
 
-def get_value_locked_for_tick_range(current_tick, current_liquidity, tick_states, tick_range=100):
+def get_value_locked_for_tick_range(current_tick, current_liquidity, tick_states, tick_spacing, token_decimals, tick_range=100):
         
-    current_tick_rounded = current_tick // 10 * 10
+    current_tick_rounded = current_tick // tick_spacing * tick_spacing
 
-    liquidities = [None for _ in range(0, 2 * tick_range + 10, 10)]
-    ticks = [current_tick - i for i in range(tick_range, 0, -10)] + [current_tick] + [current_tick + i for i in range(10, tick_range + 10, 10)]
-    ticks_rounded = [tick // 10 * 10 for tick in ticks]
+    liquidities = [None for _ in range(0, 2 * tick_range + tick_spacing, tick_spacing)]
+    ticks = [current_tick - i for i in range(tick_range, 0, -tick_spacing)] + [current_tick] + [current_tick + i for i in range(10, tick_range + tick_spacing, tick_spacing)]
+    ticks_rounded = [tick // tick_spacing * tick_spacing for tick in ticks]
 
-    liquidities[tick_range // 10] = current_liquidity
+    liquidities[tick_range // tick_spacing] = current_liquidity
 
     liquidity_tick_below = current_liquidity
     liquidity_tick_above = current_liquidity
@@ -207,25 +207,25 @@ def get_value_locked_for_tick_range(current_tick, current_liquidity, tick_states
     for i in range(0, tick_range, 10):
 
         tick_state_below = tick_states[current_tick_rounded - i]
-        tick_state_above = tick_states[current_tick_rounded + 10 + i]
+        tick_state_above = tick_states[current_tick_rounded + tick_spacing + i]
 
         if tick_state_below:
             liquidity_net_below = tick_state_below[1]
             liquidity_tick_below = liquidity_tick_below - liquidity_net_below
-            liquidities[(tick_range - i - 10) // 10] = liquidity_tick_below
+            liquidities[(tick_range - i - tick_spacing) // tick_spacing] = liquidity_tick_below
         else:
-            liquidities[(tick_range - i - 10) // 10] = liquidity_tick_below
+            liquidities[(tick_range - i - tick_spacing) // tick_spacing] = liquidity_tick_below
             
         if tick_state_above:
             liquidity_net_above = tick_state_above[1]
             liquidity_tick_above = liquidity_tick_above + liquidity_net_above
-            liquidities[(tick_range + i + 10) // 10] = liquidity_tick_above
+            liquidities[(tick_range + i + tick_spacing) // tick_spacing] = liquidity_tick_above
         else:
-            liquidities[(tick_range + i + 10) // 10] = liquidity_tick_above
+            liquidities[(tick_range + i + tick_spacing) // tick_spacing] = liquidity_tick_above
 
 
     value_locked = []
     for tick, liquidity in zip(ticks, liquidities):
-        value_locked.append(get_total_value_locked_in_tick(tick, liquidity))
+        value_locked.append(get_total_value_locked_in_tick(tick, liquidity, token_decimals))
 
     return value_locked, ticks
