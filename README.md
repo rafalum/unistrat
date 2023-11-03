@@ -23,7 +23,11 @@ INFURA_KEY=<BLOCKCHAIN_PROVIDER_URL>
 ```
 Replace the BLOCKCHAIN_PROVIDER_URL with the one given by your provider. I recommend using [Infura](https://www.infura.io/) as setting up is super fast and you get 100'000 API calls per day which should be plenty.
 
-Finally, you can run the code. There are several options available:
+Finally, you can run the code. There are two mandatory arguments to pass in:
+1. pool_address: this is the address of the UniSwap pool you want to provide liquidity to. For example, the USDC-ETH pool on mainnet has the address `0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640`
+2. network: possible values are mainnet, goerli, optimism, base
+
+Additionally, there are several options available:
 | Flags      | Description |
 | ----------- | ----------- |
 | --gui       | runs the code with the GUI (as shown above)|
@@ -35,7 +39,7 @@ Finally, you can run the code. There are several options available:
 
 So for example, if you want to backtest your strategy during from block 17000001 to block 17005000 and save the performance, run the following command:
 ```python
-python3 run.py --backtest --from_block 17000001 --to_block 17005000 --save_performance performance_17000001_17005000
+python3 run.py 0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640 mainnet --backtest --from_block 17000001 --to_block 17005000 --save_performance performance_17000001_17005000
 ```
 
 ### Structure

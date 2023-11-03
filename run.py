@@ -4,7 +4,6 @@ import pickle
 import argparse
 from PySide6.QtWidgets import QApplication
 
-from src.config import UNISWAP_POOL
 from src.collect_events import collect_events
 from src.utils import get_contract, check_data_exists
 
@@ -17,6 +16,19 @@ from src.position_manager import PositionManager
 
 def main():
     parser = argparse.ArgumentParser(description="Your program description here.")
+
+    parser.add_argument(
+        "pool_address",
+        type=str,
+        help="Specify Uniswap pool address to be used."
+    )
+    
+    parser.add_argument(
+        "network",
+        type=str,
+        choices=["mainnet", "goerli", "optimism"],
+        help="Specify the network to be used."
+    )
 
     parser.add_argument(
         "--gui",
@@ -69,11 +81,11 @@ def main():
 
         if not data_exists:
             print("Collecting data...")
-            collect_events(get_contract("USDC_ETH_POOL", UNISWAP_POOL), int(args.from_block), int(args.to_block))
+            collect_events(get_contract("POOL", args.pool_address), int(args.from_block), int(args.to_block))
     else:
         print("Running in normal mode")
     
-    provider = Provider(sim=args.simulate, backtest=args.backtest, swap_data="data/Swap.csv", mint_data="data/Mint.csv", burn_data="data/Burn.csv")
+    provider = Provider(args.pool_address, args.network, sim=args.simulate, backtest=args.backtest, swap_data="data/Swap.csv", mint_data="data/Mint.csv", burn_data="data/Burn.csv")
     state = ProtocolState(provider)
     position_manager = PositionManager(provider, state)
     strategy = Strategy(provider, state, position_manager)
@@ -84,8 +96,8 @@ def main():
     if args.gui:
         app = QApplication(sys.argv)
 
-        window = MainWindow(state, position_manager, backtest=args.backtest)
-        window.setWindowTitle("UniSwap v3 USDC-ETH Interface")
+        window = MainWindow(provider, state, position_manager, backtest=args.backtest)
+        window.setWindowTitle(f"UniSwap v3 {provider.token0_symbol}-{provider.token1_symbol} Interface")
         window.setGeometry(100, 100, 800, 600)
         window.show()
 
