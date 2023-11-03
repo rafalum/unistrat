@@ -50,11 +50,11 @@ def load_abi(name: str) -> str:
         abi: str = json.load(f)
     return abi
 
-def check_data_exists(from_block, to_block):
+def check_data_exists(from_block, to_block, pool_address):
     
-        swap_data_exists = os.path.isfile(f"data/Swap.csv")
-        mint_data_exists = os.path.isfile(f"data/Mint.csv")
-        burn_data_exists = os.path.isfile(f"data/Burn.csv")
+        swap_data_exists = os.path.isfile(f"data/{pool_address}/Swap.csv")
+        mint_data_exists = os.path.isfile(f"data/{pool_address}/Mint.csv")
+        burn_data_exists = os.path.isfile(f"data/{pool_address}/Burn.csv")
     
         if swap_data_exists and mint_data_exists and burn_data_exists:
             swap_data = np.loadtxt("data/Swap.csv", delimiter=",", dtype=float)

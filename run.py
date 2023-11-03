@@ -77,7 +77,7 @@ def main():
         
         print("Running in backtest mode")
 
-        data_exists = check_data_exists(int(args.from_block), int(args.to_block))
+        data_exists = check_data_exists(int(args.from_block), int(args.to_block), args.pool_address)
 
         if not data_exists:
             print("Collecting data...")
