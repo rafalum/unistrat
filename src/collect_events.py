@@ -9,8 +9,8 @@ from src.utils import get_contract
 def collect_events(contract, from_block, to_block, events=["Swap", "Mint", "Burn"]):
 
     # check if data folder exists
-    if not os.path.exists("data"):
-        os.makedirs("data")
+    if not os.path.exists(f"data/{contract.address}"):
+        os.makedirs(f"data/{contract.address}")
 
     increment = min(2000, to_block - from_block)
     for i in range(from_block, to_block, increment):
@@ -25,7 +25,7 @@ def collect_events(contract, from_block, to_block, events=["Swap", "Mint", "Burn
             event_data = event_filter.get_all_entries()
 
             for event in event_data:
-                with open(f"data/{event_name}.csv", "a") as f:
+                with open(f"data/{contract.address}/{event_name}.csv", "a") as f:
                     if event_name == "Swap":
                         f.writelines(f"{event.blockNumber}, {event.args['tick']}, {event.args['liquidity']}, {event.args['sqrtPriceX96']}, {event.args['amount0']}, {event.args['amount1']}\n")
                     else:
