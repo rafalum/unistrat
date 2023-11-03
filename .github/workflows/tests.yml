@@ -33,6 +33,6 @@ jobs:
 
     - name: Run tests
       env:
-        INFURA_KEY: ${{ secrets.INFURA_KEY }}
+        PROVIDER_URL: ${{ secrets.INFURA_KEY }}
         TEST_ACCOUNT_PRIVATE_KEY: ${{ secrets.TEST_ACCOUNT_PRIVATE_KEY }}
       run: python -m unittest discover -s test -p 'test_*.py'
