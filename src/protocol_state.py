@@ -45,7 +45,7 @@ class ProtocolState:
 
     def _collect(self):
 
-        next_block = None
+        last_block = self.provider.get_current_block()
         self.current_block = self.provider.get_current_block()
 
         while self.collect:
@@ -65,28 +65,27 @@ class ProtocolState:
 
             # get the current block
             while True:
-                next_block = self.provider.get_current_block()
-                if next_block != self.current_block:
+                self.current_block = self.provider.get_current_block()
+                if last_block != self.current_block:
                     break
                 else:
                     time.sleep(12)
 
             # Swap events
-            swap_events = self.provider.get_events(self.current_block, next_block, "Swap")
+            swap_events = self.provider.get_events(last_block, self.current_block, "Swap")
             self.swap_data += swap_events
 
             # Mint events
-            mint_events = self.provider.get_events(self.current_block, next_block, "Mint")
+            mint_events = self.provider.get_events(last_block, self.current_block, "Mint")
             self.mint_data += mint_events
 
             # Burn events
-            burn_events = self.provider.get_events(self.current_block, next_block, "Burn")
+            burn_events = self.provider.get_events(last_block, self.current_block, "Burn")
             self.burn_data += burn_events
 
 
             # Just for logging
-            for i in range(self.current_block, next_block):
-                self.current_block = next_block
+            for i in range(int(last_block) + 1, int(self.current_block) + 1):
                 self.logger.info(f"#### Block: {i} ####")
 
                 for swap_event in swap_events:
@@ -98,6 +97,8 @@ class ProtocolState:
                 for burn_event in burn_events:
                     if burn_event[self.BLOCK_INDEX] == i:
                         self.logger.info(f"#### Burn event: {burn_event[1]} - {burn_event[2]} ####")
+
+            last_block = self.current_block
 
             if swap_events == []:
                 continue
