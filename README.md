@@ -19,7 +19,7 @@ conda activate unistrat
 Next, you need to create a `.env` file with the following two entries:
 ```bash
 ACCOUNT_PRIVATE_KEY=<PRIVATE_KEY>
-INFURA_KEY=<BLOCKCHAIN_PROVIDER_URL>
+PROVIDER_URL=<BLOCKCHAIN_PROVIDER_URL>
 ```
 Replace the BLOCKCHAIN_PROVIDER_URL with the one given by your provider. I recommend using [Infura](https://www.infura.io/) as setting up is super fast and you get 100'000 API calls per day which should be plenty.
 
